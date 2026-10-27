@@ -1,0 +1,46 @@
+const D = {
+  en: {
+    rooms: "Rooms", book: "Booking", stay: "Check-in", food: "Restaurant", bill: "Bill", clean: "Cleaning", money: "Money", set: "Settings", admin: "Admin",
+    free: "Free", booked: "Booked", occupied: "Occupied", toClean: "To clean", out: "Out of order",
+    tapFree: "Tap a free box to book.", today: "Today", arriving: "Arriving",
+    guestName: "Guest name", phone: "Phone", room: "Room", nights: "Nights", arrival: "Arrival", from: "Booking came from", advance: "Advance (Rs)",
+    saveBooking: "Save booking", needName: "Please write the guest name.", taken: "This room is already booked on those dates. Pick another room or date.",
+    nationality: "Nationality", persons: "Persons", idNo: "ID / passport number", visa: "Visa (foreigners)", extraBed: "Extra bed", done: "Complete check-in",
+    cancel: "Cancel booking", noshow: "No-show", reason: "Reason", noOcc: "No occupied rooms.", checkout: "Check out", due: "Due", total: "Total",
+    extras: "Extras (laundry etc.)", svc: "Service charge", advancePaid: "Advance paid", taxIn: "Prices above include tax", receipt: "Simple receipt", invoice: "Tax invoice",
+    cash: "Cash", qr: "QR / eSewa", card: "Card", send: "Send to kitchen", served: "Mark served", toRoom: "Add to room bill", atTable: "Paid at table",
+    table: "Table", order: "Order", empty: "Empty", allClean: "All clean ✓", markClean: "Mark clean",
+    billing: "Billing", vatSwitch: "Issue VAT / tax invoice", vatHint: "Off = simple receipt", svcSwitch: "Service charge", taxInSwitch: "Prices already include tax", taxInHint: "Off = tax is added on top",
+    keepId: "Keep ID photos", consent: "needs guest consent", roomPrices: "Room prices", sources: "Booking sources (you manage)", newSource: "New source, e.g. Agoda", hotelInfo: "Hotel", name: "Hotel name", address: "Address", pan: "PAN / VAT no.",
+    conflict: "Two bookings for the same room!", conflictHint: "Two phones booked the same room. The older booking keeps it. Move the newer one:", move: "Move to",
+    export: "Download bookings (Excel/CSV)", install: "Install app", offline: "Works offline. Data is saved on this device.",
+    day: "Day book", byMethod: "By method", noPay: "No payments yet.", adminNote: "Test page only: in the real version only the admin can see this, not hotel owners.",
+    sample: "Load sample rooms", rn: "rooms", save: "Save", logo: "Lang",
+    f_restaurant: "Restaurant / room service", f_housekeeping: "Housekeeping list", f_sources: "Own booking sources", f_excel: "Excel export", f_email: "Email bills", f_publicLink: "'Book here' public link (later)", f_ical: "Calendar link sync (later)",
+    auditLog: "Activity log", cancelled: "Cancelled", noShowDone: "Marked no-show",
+  },
+  ne: {
+    rooms: "कोठा", book: "बुकिङ", stay: "चेक-इन", food: "रेस्टुरेन्ट", bill: "बिल", clean: "सफाई", money: "पैसा", set: "सेटिङ", admin: "एडमिन",
+    free: "खाली", booked: "बुक", occupied: "भरिएको", toClean: "सफा गर्ने", out: "बिग्रेको",
+    tapFree: "खाली घरमा थिचेर बुकिङ गर्नुस्।", today: "आज", arriving: "आज आउने",
+    guestName: "ग्राहकको नाम", phone: "फोन", room: "कोठा", nights: "कति रात", arrival: "आगमन मिति", from: "बुकिङ कहाँबाट आयो?", advance: "अग्रिम (Rs)",
+    saveBooking: "बुकिङ सेभ गर्नुस्", needName: "ग्राहकको नाम लेख्नुहोस्।", taken: "ती मितिमा यो कोठा पहिल्यै बुक छ। अर्को कोठा वा मिति रोज्नुहोस्।",
+    nationality: "राष्ट्रियता", persons: "कति जना", idNo: "परिचयपत्र / पासपोर्ट नम्बर", visa: "भिसा (विदेशी भए)", extraBed: "थप खाट", done: "चेक-इन पूरा",
+    cancel: "बुकिङ रद्द", noshow: "आएन (No-show)", reason: "कारण", noOcc: "भरिएको कोठा छैन।", checkout: "चेक-आउट गर्नुस्", due: "तिर्न बाँकी", total: "जम्मा",
+    extras: "अरू (लुगा धुलाइ आदि)", svc: "सर्भिस चार्ज", advancePaid: "अग्रिम तिरेको", taxIn: "माथिका मूल्यमा कर समावेश छ", receipt: "सादा रसिद", invoice: "ट्याक्स इनभ्वाइस",
+    cash: "नगद", qr: "QR / eSewa", card: "कार्ड", send: "भान्छामा पठाउनुस्", served: "सर्भ भयो", toRoom: "रुम बिलमा थप्ने", atTable: "टेबलमै तिर्यो",
+    table: "टेबल", order: "अर्डर", empty: "केही छैन", allClean: "सबै सफा छन् ✓", markClean: "सफा भयो",
+    billing: "बिल", vatSwitch: "VAT / ट्याक्स इनभ्वाइस दिने", vatHint: "बन्द गरे सादा रसिद बन्छ", svcSwitch: "सर्भिस चार्ज लिने", taxInSwitch: "मूल्यमा कर समावेश छ", taxInHint: "बन्द गरे बिलमा माथिबाट थपिन्छ",
+    keepId: "ID फोटो लिने", consent: "ग्राहकको सहमति चाहिन्छ", roomPrices: "कोठाको मूल्य", sources: "बुकिङ स्रोत (आफैले मिलाउने)", newSource: "नयाँ स्रोत, जस्तै Agoda", hotelInfo: "होटल", name: "होटलको नाम", address: "ठेगाना", pan: "PAN / VAT नं.",
+    conflict: "एउटै कोठा दुई जनालाई बुक भयो!", conflictHint: "दुई फोनले एउटै कोठा बुक गरे। पुरानो बुकिङले कोठा पाउँछ। नयाँलाई सार्नुस्:", move: "सार्ने कोठा",
+    export: "बुकिङ डाउनलोड (Excel/CSV)", install: "एप इन्स्टल गर्नुस्", offline: "इन्टरनेट बिना चल्छ। डेटा यही मोबाइल/कम्प्युटरमा सेभ हुन्छ।",
+    day: "दिनको हिसाब", byMethod: "तरिका अनुसार", noPay: "अहिलेसम्म भुक्तानी छैन।", adminNote: "यो परीक्षण पेज मात्र हो: असली संस्करणमा एडमिनले मात्र देख्छ, होटल मालिकले होइन।",
+    sample: "नमुना कोठा हाल्नुस्", rn: "कोठा", save: "सेभ", logo: "भाषा",
+    f_restaurant: "रेस्टुरेन्ट / रुम सर्भिस", f_housekeeping: "सफाई सूची", f_sources: "आफ्ना बुकिङ स्रोत", f_excel: "एक्सेल एक्सपोर्ट", f_email: "इमेलबाट बिल", f_publicLink: "'यहाँ बुक गर्नुस्' लिङ्क (पछि)", f_ical: "क्यालेन्डर लिङ्क (पछि)",
+    auditLog: "गतिविधि लग", cancelled: "रद्द", noShowDone: "आएन भनियो",
+  },
+} as const;
+
+export type Lang = keyof typeof D;
+export type Key = keyof (typeof D)["en"];
+export const tr = (lang: Lang, k: Key): string => D[lang][k];
