@@ -3,3 +3,4 @@ dist
 *.log
 .dev.vars
 .wrangler
+.admin-key.txt

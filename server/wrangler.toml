@@ -5,11 +5,11 @@ compatibility_date = "2025-09-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "pocket-hotel"
-database_id = "REPLACE_AFTER_wrangler_d1_create"
+database_id = "4dca9457-b87e-4164-acc1-f5b505340d07"
 migrations_dir = "migrations"
 
 [vars]
-ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+ALLOWED_ORIGINS = "https://pocket-hotel.dahal-khani.workers.dev"
 MAIL_FROM = "Pocket Hotel <onboarding@resend.dev>"
 # Local testing only: return the OTP in the response. Never set to 1 in production.
 DEV_RETURN_OTP = "0"
