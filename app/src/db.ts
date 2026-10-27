@@ -1,12 +1,18 @@
 import Dexie, { type Table } from "dexie";
 import type { Audit, Booking, Hotel, Order, Room } from "./lib/types";
 
+export type Meta = { k: string; v: unknown };
+
+/** True while the server's data is being written in, so those writes are not mistaken for local edits. */
+export const inSyncTx = () => !!(Dexie.currentTransaction as unknown as { _sync?: boolean } | null)?._sync;
+
 class HotelDB extends Dexie {
   rooms!: Table<Room, string>;
   bookings!: Table<Booking, string>;
   orders!: Table<Order, string>;
   hotel!: Table<Hotel, string>;
   audit!: Table<Audit, number>;
+  meta!: Table<Meta, string>;
   constructor(name = "pocket-hotel") {
     super(name);
     this.version(1).stores({
@@ -16,6 +22,30 @@ class HotelDB extends Dexie {
       hotel: "id",
       audit: "++id, at",
     });
+    // Version 2: every record carries updatedAt so edits can be sent to the server and merged newest-wins.
+    this.version(2)
+      .stores({
+        rooms: "n, updatedAt",
+        bookings: "id, room, from, status, updatedAt",
+        orders: "id, at, updatedAt",
+        hotel: "id, updatedAt",
+        meta: "k",
+      })
+      .upgrade(async (tx) => {
+        const now = Date.now();
+        for (const t of ["rooms", "orders", "hotel"]) await tx.table(t).toCollection().modify((r: { updatedAt?: number }) => { r.updatedAt ??= now; });
+      });
+    for (const t of [this.rooms, this.bookings, this.orders, this.hotel] as Table<{ updatedAt?: number }, string>[]) {
+      // Stamp every local edit. Records applied from the server skip this (the transaction is marked).
+      t.hook("creating", function (_k, obj) {
+        if (inSyncTx()) return;
+        obj.updatedAt ??= Date.now();
+      });
+      t.hook("updating", function (mods) {
+        if (inSyncTx()) return;
+        return { ...(mods as object), updatedAt: Date.now() };
+      });
+    }
   }
 }
 
@@ -23,6 +53,7 @@ export const db = new HotelDB();
 
 export const DEFAULT_HOTEL: Hotel = {
   id: "main",
+  updatedAt: 0, // not sent to the server until someone really edits it
   name: "My Hotel",
   pan: "",
   phone: "",
@@ -47,3 +78,24 @@ export async function logAudit(action: string, detail: string) {
 }
 
 export const uid = () => crypto.randomUUID();
+
+export async function getMeta<T>(k: string, d: T): Promise<T> {
+  const r = await db.meta.get(k);
+  return r ? (r.v as T) : d;
+}
+export const setMeta = (k: string, v: unknown) => db.meta.put({ k, v });
+
+/** Wipe everything on this device (used when a different hotel or person signs in). */
+export async function wipeAll() {
+  await db.transaction("rw", [db.rooms, db.bookings, db.orders, db.hotel, db.audit, db.meta], async () => {
+    await Promise.all([db.rooms.clear(), db.bookings.clear(), db.orders.clear(), db.hotel.clear(), db.audit.clear(), db.meta.clear()]);
+  });
+}
+
+/** Language is a choice of this device, so changing it must not look like a hotel-settings edit. */
+export async function setLang(lang: "ne" | "en") {
+  await db.transaction("rw", db.hotel, async (tx) => {
+    (tx as unknown as { _sync: boolean })._sync = true;
+    await db.hotel.update("main", { lang });
+  });
+}

@@ -72,12 +72,12 @@ async function tokens(env: Env, userId: string, hotelId: string, deviceId: strin
 const deviceOk = (d: any): d is { id: string; name: string } => d && typeof d.id === "string" && d.id.length >= 8 && d.id.length <= 64 && typeof d.name === "string";
 
 /** false when this device id already belongs to another hotel: nobody may take over another hotel's device record. */
-async function upsertDevice(env: Env, id: string, hotelId: string, userId: string, name: string): Promise<boolean> {
+async function upsertDevice(env: Env, id: string, hotelId: string, userId: string, name: string, ownerOk = false): Promise<boolean> {
   const ex = await env.DB.prepare("SELECT hotel_id,revoked FROM devices WHERE id=?").bind(id).first<{ hotel_id: string; revoked: number }>();
   const now = Date.now();
-  if (!ex) await env.DB.prepare("INSERT INTO devices (id,hotel_id,user_id,name,created_at,last_seen) VALUES (?,?,?,?,?,?)").bind(id, hotelId, userId, name.slice(0, 60), now, now).run();
+  if (!ex) await env.DB.prepare("INSERT INTO devices (id,hotel_id,user_id,name,owner_ok,created_at,last_seen) VALUES (?,?,?,?,?,?,?)").bind(id, hotelId, userId, name.slice(0, 60), ownerOk ? 1 : 0, now, now).run();
   else if (ex.hotel_id !== hotelId) return false;
-  else await env.DB.prepare("UPDATE devices SET user_id=?,name=?,last_seen=? WHERE id=?").bind(userId, name.slice(0, 60), now, id).run();
+  else await env.DB.prepare("UPDATE devices SET user_id=?,name=?,last_seen=?,owner_ok=MAX(owner_ok,?) WHERE id=?").bind(userId, name.slice(0, 60), now, ownerOk ? 1 : 0, id).run();
   return true;
 }
 
@@ -118,7 +118,7 @@ app.post("/auth/signup", async (c) => {
     c.env.DB.prepare("INSERT INTO hotels (id,name,code,feat,created_at) VALUES (?,?,?,?,?)").bind(hotelId, String(b.hotelName).trim().slice(0, 100), code, JSON.stringify(DEFAULT_FEATURES), now),
     c.env.DB.prepare("INSERT INTO users (id,hotel_id,email,name,role,perms,salt,hash,created_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(userId, hotelId, email, String(b.name || "").slice(0, 80), "owner", JSON.stringify(PERMS), salt, await hashPassword(b.password, salt), now),
   ]);
-  await upsertDevice(c.env, b.device.id, hotelId, userId, b.device.name);
+  await upsertDevice(c.env, b.device.id, hotelId, userId, b.device.name, true);
   const u = await c.env.DB.prepare("SELECT * FROM users WHERE id=?").bind(userId).first<any>();
   return c.json(await session(c.env, u, b.device.id));
 });
@@ -131,10 +131,10 @@ app.post("/auth/login", async (c) => {
   const u = await c.env.DB.prepare("SELECT * FROM users WHERE email=? AND active=1").bind(email).first<any>();
   const good = u ? safeEqual(await hashPassword(b.password, u.salt), u.hash) : (await hashPassword(b.password, "x".repeat(24)), false);
   if (!u || !good) { await fail(c.env, key); return bad(c, 401, "bad_login"); }
-  const dev = await c.env.DB.prepare("SELECT hotel_id,revoked FROM devices WHERE id=?").bind(b.device.id).first<{ hotel_id: string; revoked: number }>();
+  const dev = await c.env.DB.prepare("SELECT hotel_id,revoked,owner_ok FROM devices WHERE id=?").bind(b.device.id).first<{ hotel_id: string; revoked: number; owner_ok: number }>();
   if (dev && dev.hotel_id !== u.hotel_id) return bad(c, 409, "device_conflict");
   if (dev?.revoked) return bad(c, 403, "device_revoked");
-  if (!dev) {
+  if (!dev?.owner_ok) {
     // A device we have not seen must prove it has the email inbox.
     if (!b.code) {
       const r = await issueOtp(c.env, email, "login");
@@ -143,7 +143,7 @@ app.post("/auth/login", async (c) => {
     }
     if (!(await checkOtp(c.env, email, "login", b.code))) return bad(c, 401, "bad_code");
   }
-  if (!(await upsertDevice(c.env, b.device.id, u.hotel_id, u.id, b.device.name))) return bad(c, 409, "device_conflict");
+  if (!(await upsertDevice(c.env, b.device.id, u.hotel_id, u.id, b.device.name, true))) return bad(c, 409, "device_conflict");
   return c.json(await session(c.env, u, b.device.id));
 });
 

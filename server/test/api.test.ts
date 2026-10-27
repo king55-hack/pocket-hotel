@@ -58,6 +58,18 @@ describe("accounts and login", () => {
 });
 
 describe("staff and roles", () => {
+  it("a phone first used by staff still makes the owner prove the email code", async () => {
+    const env = ENV();
+    const a = await signup(env);
+    const s = await addStaff(env, a.tok, a.hotel.code, "desk9", "reception");
+    const l = await call(env, "/auth/login", { body: { email: a.email, password: "secret-pass-1", device: s.device } });
+    expect(l.s).toBe(401);
+    expect(l.j.error).toBe("otp_required");
+    const ok = await call(env, "/auth/login", { body: { email: a.email, password: "secret-pass-1", device: s.device, code: l.j.devCode } });
+    expect(ok.s).toBe(200);
+    expect((await call(env, "/auth/login", { body: { email: a.email, password: "secret-pass-1", device: s.device } })).s).toBe(200);
+  });
+
   it("staff log in with hotel code, name and PIN; wrong PIN locks after 5", async () => {
     const env = ENV();
     const a = await signup(env);

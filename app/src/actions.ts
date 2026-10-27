@@ -67,8 +67,11 @@ export async function checkOut(id: string, extra: number, pay: { cash: number; q
     const due = total - paidSum(b);
     if (cash + qr > Math.max(0, due)) return { ok: false, error: "amount" } as const;
     const invoice = h.bill.vatInvoice;
-    const seq = (invoice ? h.invoiceSeq : h.receiptSeq) + 1;
-    const billNo = `${invoice ? "INV" : "RC"}-${String(seq).padStart(4, "0")}`;
+    const prefix = invoice ? "INV" : "RC";
+    // Next number = highest number on this device + 1. Two phones offline can pick the same one; the server flags that.
+    const all = await db.bookings.toArray();
+    const seq = Math.max(0, ...all.map((x) => (x.billNo?.startsWith(prefix + "-") ? Number(x.billNo.slice(prefix.length + 1)) || 0 : 0))) + 1;
+    const billNo = `${prefix}-${String(seq).padStart(4, "0")}`;
     const now = Date.now();
     const payments = [...b.payments];
     if (cash > 0) payments.push({ id: uid(), method: "cash", amount: cash, at: now, kind: "bill" });
@@ -76,7 +79,6 @@ export async function checkOut(id: string, extra: number, pay: { cash: number; q
     const stillDue = due - cash - qr;
     if (stillDue > 0) payments.push({ id: uid(), method: "credit", amount: stillDue, at: now, kind: "bill" });
     await db.bookings.update(id, { status: "done", extra: e, billNo, payments, updatedAt: now });
-    await db.hotel.update("main", invoice ? { invoiceSeq: seq } : { receiptSeq: seq });
     await db.rooms.update(b.room, { st: "clean" });
     await logAudit("checkout", `${billNo} room ${b.room} total ${total} unpaid ${stillDue}`);
     return { ok: true, value: { billNo, due: stillDue } } as const;

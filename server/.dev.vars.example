@@ -1,0 +1,3 @@
+JWT_SECRET=local-only-secret-at-least-32-characters-long
+ADMIN_KEY=local-admin-key
+DEV_RETURN_OTP=1

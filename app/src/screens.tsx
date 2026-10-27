@@ -4,13 +4,15 @@ import { db, uid } from "./db";
 import { calcBill, sumLines } from "./lib/bill";
 import { bookingAt, findConflicts, paidSum } from "./lib/booking";
 import { addDays, shortDay, todayISO } from "./lib/dates";
-import type { Booking, Features, Hotel, Line, Order, Room } from "./lib/types";
+import type { Booking, Hotel, Line, Order, Room } from "./lib/types";
 import { tr, type Key, type Lang } from "./i18n";
+import { api, type Session } from "./api";
+import { AccountCard } from "./screens2";
 
-export type Tab = "rooms" | "book" | "stay" | "food" | "bill" | "money" | "clean" | "set" | "admin";
+export type Tab = "rooms" | "book" | "stay" | "food" | "bill" | "money" | "clean" | "set" | "staff";
 export type P = {
   h: Hotel; L: Lang; rooms: Room[]; bookings: Booking[]; orders: Order[];
-  go: (t: Tab, id?: string) => void; sel: string;
+  go: (t: Tab, id?: string) => void; sel: string; can: (p: string) => boolean; session: Session | null; onOut: () => void;
   draft: { room: string; from: string } | null; setDraft: (d: { room: string; from: string } | null) => void;
 };
 
@@ -298,7 +300,7 @@ export function Clean({ L, rooms }: P) {
   );
 }
 
-export function SettingsScreen({ h, L, rooms }: P) {
+export function SettingsScreen({ h, L, rooms, can, session, onOut }: P) {
   const t = useT(L);
   const upd = (patch: Partial<Hotel>) => void db.hotel.update("main", patch);
   const bill = (patch: Partial<Hotel["bill"]>) => upd({ bill: { ...h.bill, ...patch } });
@@ -307,14 +309,14 @@ export function SettingsScreen({ h, L, rooms }: P) {
   const [log, setLog] = useState<{ at: number; action: string; detail: string }[]>([]);
   return (
     <>
-      <div className="card"><h2>{t("hotelInfo")}</h2>
+      {can("settings.edit") && <div className="card"><h2>{t("hotelInfo")}</h2>
         <label htmlFor="hn">{t("name")}</label><input id="hn" defaultValue={h.name} onBlur={(e) => upd({ name: e.target.value.trim() || h.name })} />
         <label htmlFor="ha">{t("address")}</label><input id="ha" defaultValue={h.address} onBlur={(e) => upd({ address: e.target.value })} />
         <div className="grid2">
           <div><label htmlFor="hp">{t("phone")}</label><input id="hp" inputMode="tel" defaultValue={h.phone} onBlur={(e) => upd({ phone: e.target.value })} /></div>
           <div><label htmlFor="hv">{t("pan")}</label><input id="hv" inputMode="numeric" defaultValue={h.pan} onBlur={(e) => upd({ pan: e.target.value })} /></div>
-        </div></div>
-      <div className="card"><h2>{t("billing")}</h2>
+        </div></div>}
+      {can("settings.edit") && <div className="card"><h2>{t("billing")}</h2>
         <div className="sw"><div>{t("vatSwitch")}<small>{t("vatHint")}</small></div><Toggle label={t("vatSwitch")} on={h.bill.vatInvoice} onClick={() => bill({ vatInvoice: !h.bill.vatInvoice })} /></div>
         <div className="sw"><div>{t("svcSwitch")}<small>{h.bill.svcPct}%</small></div><Toggle label={t("svcSwitch")} on={h.bill.svc} onClick={() => bill({ svc: !h.bill.svc })} /></div>
         <div className="sw"><div>{t("taxInSwitch")}<small>{t("taxInHint")}</small></div><Toggle label={t("taxInSwitch")} on={h.bill.taxIncluded} onClick={() => bill({ taxIncluded: !h.bill.taxIncluded })} /></div>
@@ -322,8 +324,8 @@ export function SettingsScreen({ h, L, rooms }: P) {
           <div><label htmlFor="vp">VAT %</label><input id="vp" type="number" inputMode="decimal" defaultValue={h.bill.vat} onBlur={(e) => bill({ vat: Math.max(0, Number(e.target.value) || 0) })} /></div>
           <div><label htmlFor="sp">{t("svc")} %</label><input id="sp" type="number" inputMode="decimal" defaultValue={h.bill.svcPct} onBlur={(e) => bill({ svcPct: Math.max(0, Number(e.target.value) || 0) })} /></div>
         </div>
-        <div className="sw"><div>{t("keepId")}<small>{t("consent")}</small></div><Toggle label={t("keepId")} on={h.bill.idPhoto} onClick={() => bill({ idPhoto: !h.bill.idPhoto })} /></div></div>
-      <div className="card"><h2>{t("roomPrices")}</h2>
+        <div className="sw"><div>{t("keepId")}<small>{t("consent")}</small></div><Toggle label={t("keepId")} on={h.bill.idPhoto} onClick={() => bill({ idPhoto: !h.bill.idPhoto })} /></div></div>}
+      {(can("prices.edit") || can("rooms.manage")) && <div className="card"><h2>{t("roomPrices")}</h2>
         {rooms.map((r) => (
           <div className="row" style={{ marginBottom: 6 }} key={r.n}>
             <b style={{ width: 96 }}>{r.n} {r.type}</b>
@@ -340,30 +342,19 @@ export function SettingsScreen({ h, L, rooms }: P) {
         <input aria-label="new price" type="number" style={{ marginTop: 8 }} value={nr.price} onChange={(e) => setNr({ ...nr, price: e.target.value })} />
         <button className="btn" onClick={async () => { const n = nr.n.trim(); if (!n || (await db.rooms.get(n))) return; await db.rooms.add({ n, type: nr.type, floor: Number(nr.floor) || 1, beds: Number(nr.beds) || 1, price: Math.max(0, Number(nr.price) || 0), st: "free" }); setNr({ ...nr, n: "" }); }}>＋</button>
         {!rooms.length && <button className="btn alt" onClick={() => void loadSampleRooms()}>{t("sample")}</button>}
-      </div>
-      {h.feat.sources ? (
+      </div>}
+      {h.feat.sources && can("settings.edit") ? (
         <div className="card"><h2>{t("sources")}</h2>
           <div>{h.sources.map((s, i) => <span className="chip" key={s}>{s}<button aria-label={"remove " + s} onClick={() => upd({ sources: h.sources.filter((_, j) => j !== i) })}>✕</button></span>)}</div>
           <div className="row" style={{ marginTop: 8 }}><input aria-label="new source" placeholder={t("newSource")} value={src} onChange={(e) => setSrc(e.target.value)} />
             <button className="btn sm" onClick={() => { const v = src.trim(); if (v && !h.sources.includes(v)) upd({ sources: [...h.sources, v] }); setSrc(""); }}>＋</button></div>
         </div>) : null}
-      <div className="card"><h2>{t("auditLog")}</h2>
-        <button className="btn alt" onClick={async () => setLog((await db.audit.orderBy("at").reverse().limit(20).toArray()))}>{t("auditLog")}</button>
+      {session && <AccountCard L={L} session={session} onOut={onOut} />}
+      {can("reports.view") && <div className="card"><h2>{t("auditLog")}</h2>
+        <button className="btn alt" onClick={async () => { if (session) { const r = await api("/audit"); setLog(r.s === 200 ? r.j.audit.map((x: { at: number; action: string; detail: string; user: string | null }) => ({ at: x.at, action: x.action, detail: `${x.user ?? ""} ${x.detail}` })) : []); } else setLog(await db.audit.orderBy("at").reverse().limit(20).toArray()); }}>{t("auditLog")}</button>
         {log.map((a, i) => <div className="item" key={i}><span>{a.action}<br /><small>{a.detail}</small></span><small>{new Date(a.at).toLocaleString()}</small></div>)}
-      </div>
+      </div>}
     </>
   );
 }
 
-export function Admin({ h, L }: P) {
-  const t = useT(L);
-  const keys: (keyof Features)[] = ["restaurant", "housekeeping", "sources", "excel", "email", "publicLink", "ical"];
-  return (
-    <div className="card"><h2>{t("admin")}</h2>
-      <div className="warn">{t("adminNote")}</div>
-      {keys.map((k) => (
-        <div className="sw" key={k}><div>{t(("f_" + k) as Key)}</div>
-          <Toggle label={k} on={h.feat[k]} onClick={() => void db.hotel.update("main", { feat: { ...h.feat, [k]: !h.feat[k] } })} /></div>))}
-    </div>
-  );
-}

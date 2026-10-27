@@ -1,5 +1,5 @@
 export type RoomState = "free" | "clean" | "out";
-export type Room = { n: string; type: string; floor: number; beds: number; price: number; st: RoomState };
+export type Room = { updatedAt?: number; n: string; type: string; floor: number; beds: number; price: number; st: RoomState };
 
 export type BookingStatus = "booked" | "occupied" | "done" | "cancelled" | "noshow";
 export type Line = { name: string; qty: number; price: number };
@@ -25,13 +25,14 @@ export type Booking = {
   updatedAt: number;
 };
 
-export type Order = { id: string; to: string; items: Line[]; done: boolean; billed: boolean; at: number };
+export type Order = { updatedAt?: number; id: string; to: string; items: Line[]; done: boolean; billed: boolean; at: number };
 
 export type BillSettings = { vatInvoice: boolean; taxIncluded: boolean; svc: boolean; vat: number; svcPct: number; idPhoto: boolean };
 export type Features = { restaurant: boolean; housekeeping: boolean; sources: boolean; excel: boolean; email: boolean; publicLink: boolean; ical: boolean };
 
 export type Hotel = {
   id: "main";
+  updatedAt?: number;
   name: string;
   pan: string;
   phone: string;
