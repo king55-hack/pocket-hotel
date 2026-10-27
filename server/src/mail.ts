@@ -13,9 +13,11 @@ export interface Env {
   MAIL_FROM: string
   ALLOWED_ORIGINS: string
   DEV_RETURN_OTP?: string
+  /** Public address of the web app, used for links inside emails. */
+  APP_URL?: string
 }
 
-export interface MailOpts { attachments?: { filename: string; content: string }[]; replyTo?: string }
+export interface MailOpts { attachments?: { filename: string; content: string }[]; replyTo?: string; html?: string }
 
 const b64 = (bytes: Uint8Array) => { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(s) }
 const b64url = (s: string) => b64(new TextEncoder().encode(s)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -26,7 +28,7 @@ const encodedWord = (s: string) => (/^[\x20-\x7e]*$/.test(s) ? oneLine(s) : `=?U
 const MIME: Record<string, string> = { pdf: 'application/pdf', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', png: 'image/png' }
 
 /** A complete email message (RFC 5322 / MIME) with Nepali text and attachments that any mail program reads correctly. */
-export function buildMime(m: { from: string; to: string; subject: string; text: string; replyTo?: string; attachments?: { filename: string; content: string }[] }): string {
+export function buildMime(m: { from: string; to: string; subject: string; text: string; html?: string; replyTo?: string; attachments?: { filename: string; content: string }[] }): string {
   const boundary = 'ph_' + crypto.randomUUID().replace(/-/g, '')
   const head = [
     `From: ${encodedWord('Pocket Hotel')} <${oneLine(m.from).replace(/^.*<|>.*$/g, '')}>`,
@@ -36,8 +38,14 @@ export function buildMime(m: { from: string; to: string; subject: string; text: 
     'MIME-Version: 1.0',
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
   ]
+  const textPart = (b: string) => `--${b}\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(b64(new TextEncoder().encode(m.text)))}`
+  const alt = 'pa_' + crypto.randomUUID().replace(/-/g, '')
+  // With HTML, text and HTML go as alternatives: mail apps show the HTML and fall back to plain text if they cannot.
+  const body = m.html
+    ? `--${boundary}\r\nContent-Type: multipart/alternative; boundary="${alt}"\r\n\r\n${textPart(alt)}\r\n--${alt}\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(b64(new TextEncoder().encode(m.html)))}\r\n--${alt}--`
+    : textPart(boundary)
   const parts = [
-    `--${boundary}\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(b64(new TextEncoder().encode(m.text)))}`,
+    body,
     ...(m.attachments ?? []).map((a) => {
       const name = a.filename.replace(/[^\w .()-]/g, '_').replace(/\.{2,}/g, '.')
       const type = MIME[name.split('.').pop()?.toLowerCase() ?? ''] ?? 'application/octet-stream'
@@ -67,7 +75,7 @@ async function gmailAccessToken(env: Env): Promise<string | null> {
 async function sendViaGmail(env: Env, to: string, subject: string, text: string, opts: MailOpts): Promise<boolean> {
   const token = await gmailAccessToken(env)
   if (!token) return false
-  const raw = b64url(buildMime({ from: env.GMAIL_SENDER!, to, subject, text, replyTo: opts.replyTo, attachments: opts.attachments }))
+  const raw = b64url(buildMime({ from: env.GMAIL_SENDER!, to, subject, text, html: opts.html, replyTo: opts.replyTo, attachments: opts.attachments }))
   const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
     method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ raw }),
   })
@@ -79,7 +87,7 @@ async function sendViaResend(env: Env, to: string, subject: string, text: string
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: env.MAIL_FROM, to: [to], subject, text, ...(opts.attachments ? { attachments: opts.attachments } : {}), ...(opts.replyTo ? { reply_to: opts.replyTo } : {}) }),
+    body: JSON.stringify({ from: env.MAIL_FROM, to: [to], subject, text, ...(opts.html ? { html: opts.html } : {}), ...(opts.attachments ? { attachments: opts.attachments } : {}), ...(opts.replyTo ? { reply_to: opts.replyTo } : {}) }),
   })
   if (!r.ok) console.log('[mail] provider error', r.status, await r.text())
   return r.ok
@@ -103,7 +111,3 @@ export async function sendMail(env: Env, to: string, subject: string, text: stri
   return false
 }
 
-export const otpMail = (code: string) => ({
-  subject: 'Pocket Hotel: तपाईंको कोड / your code',
-  text: `तपाईंको प्रमाणीकरण कोड: ${code}\nYour verification code: ${code}\n\nयो कोड १० मिनेटसम्म मान्य छ। कसैलाई नदिनुस्।\nThis code is valid for 10 minutes. Do not share it.`,
-})

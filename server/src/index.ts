@@ -2,7 +2,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Context } from "hono";
 import { hashPassword, randomHex, safeEqual, sha256, signJwt, verifyJwt } from "./crypto";
-import { otpMail, sendMail, type Env } from "./mail";
+import { sendMail, type Env } from "./mail";
+import { otpEmail } from "./otpEmail";
 import { DEFAULT_FEATURES, PERMS, permsOf } from "./perms";
 import { audit, bad, body, need, type App } from "./util";
 import { sync } from "./sync";
@@ -44,8 +45,8 @@ async function issueOtp(env: Env, email: string, purpose: "signup" | "login") {
   if ((r?.n ?? 0) >= 5) return { error: "rate" as const };
   const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, "0");
   await env.DB.prepare("INSERT INTO otps (email,purpose,code_hash,expires,created_at) VALUES (?,?,?,?,?)").bind(email, purpose, await sha256(`${code}:${email}:${env.JWT_SECRET}`), now + 10 * 60_000, now).run();
-  const m = otpMail(code);
-  const sent = await sendMail(env, email, m.subject, m.text);
+  const m = otpEmail(code, env.APP_URL ?? "https://pocket-hotel.dahal-khani.workers.dev");
+  const sent = await sendMail(env, email, m.subject, m.text, { html: m.html });
   if (!sent && env.DEV_RETURN_OTP !== "1") {
     await env.DB.prepare("DELETE FROM otps WHERE email=? AND created_at=?").bind(email, now).run();
     return { error: "mail" as const }; // say so now, instead of leaving the person waiting for mail that never comes

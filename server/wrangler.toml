@@ -14,6 +14,7 @@ MAIL_FROM = "Pocket Hotel <onboarding@resend.dev>"
 # Local testing only: return the OTP in the response. Never set to 1 in production.
 DEV_RETURN_OTP = "0"
 ADMIN_EMAIL = ""
+APP_URL = "https://pocket-hotel.dahal-khani.workers.dev"
 
 # Secrets (wrangler secret put NAME, or .dev.vars for local): JWT_SECRET, ADMIN_KEY, RESEND_API_KEY,
 # GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, GMAIL_SENDER
