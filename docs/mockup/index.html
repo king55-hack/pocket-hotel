@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ne">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pocket Hotel mockup</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1f2a37;--mute:#6b7280;--pri:#0f6b5c;--pri2:#e3f2ef;--warn:#b45309;--bad:#b91c1c;--line:#e5e1d8;
+--free:#d9f2e3;--book:#fde9b8;--occ:#cfe0ff;--clean:#e9dcff;--out:#ddd}
+@media(prefers-color-scheme:dark){:root{--bg:#14181c;--card:#1d2328;--ink:#eef1f4;--mute:#9aa4af;--pri:#46c2ad;--pri2:#173a35;--line:#2c353d;--free:#1d4a35;--book:#5a4513;--occ:#1f3a6b;--clean:#43306b;--out:#3a3a3a;--warn:#f0b04a;--bad:#f08080}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,sans-serif;padding-bottom:76px}
+header{position:sticky;top:0;z-index:5;background:var(--pri);color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+header b{font-size:18px}
+.lang{background:#fff3;border:0;color:#fff;border-radius:8px;padding:8px 12px;font-size:16px}
+main{padding:16px;max-width:900px;margin:0 auto}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;overflow-x:auto}
+nav button{flex:1;min-width:64px;border:0;background:none;color:var(--mute);padding:10px 4px;font-size:12px;min-height:56px}
+nav button span{display:block;font-size:20px}
+nav button.on{color:var(--pri);font-weight:700;background:var(--pri2)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+h2{margin:0 0 10px;font-size:20px}h3{margin:12px 0 6px;font-size:16px}
+.btn{display:block;width:100%;border:0;border-radius:12px;background:var(--pri);color:#fff;font-size:17px;padding:14px;min-height:50px;margin-top:8px}
+.btn.alt{background:var(--pri2);color:var(--pri)}.btn.bad{background:var(--bad)}.btn.sm{display:inline-block;width:auto;padding:8px 14px;min-height:40px;font-size:15px;margin:2px}
+label{display:block;font-size:14px;color:var(--mute);margin:10px 0 4px}
+input,select{width:100%;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);min-height:48px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tbl{overflow-x:auto;border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{border:1px solid var(--line);padding:0;text-align:center;font-size:13px;height:46px}
+th{background:var(--card);padding:4px}
+td.c{cursor:pointer}td.f{background:var(--free)}td.b{background:var(--book);font-weight:600}td.o{background:var(--occ);font-weight:600}
+.rn{text-align:left;padding:4px 8px;min-width:90px;white-space:nowrap}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:13px}
+.s-free{background:var(--free)}.s-booked{background:var(--book)}.s-occupied{background:var(--occ)}.s-clean{background:var(--clean)}.s-out{background:var(--out)}
+.sw{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);gap:10px}
+.sw:last-child{border:0}.sw small{display:block;color:var(--mute);font-size:13px}
+.tg{width:54px;height:30px;border-radius:99px;background:#9ca3af;position:relative;border:0;flex:none}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.15s}
+.tg.on{background:var(--pri)}.tg.on::after{left:27px}
+.note{background:var(--pri2);border-radius:10px;padding:10px;font-size:14px;margin:8px 0}
+.warn{background:#fff3cd;color:#664d03;border-radius:10px;padding:10px;font-size:14px;margin:8px 0}
+.leg span{display:inline-block;margin:2px 6px 2px 0;font-size:13px}
+.item{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.bill td{border:0;height:auto;padding:5px 0;text-align:left;font-size:15px}.bill td:last-child{text-align:right}
+.tot td{font-weight:700;font-size:18px;border-top:2px solid var(--ink)}
+.chip{display:inline-block;background:var(--pri2);color:var(--pri);border-radius:99px;padding:6px 12px;margin:3px;font-size:14px}
+.chip button{border:0;background:none;color:var(--bad);font-size:16px;padding:0 0 0 6px}
+.demo{background:#fff3cd;color:#664d03;font-size:12px;text-align:center;padding:4px}
+@media(min-width:700px){nav{justify-content:center}nav button{max-width:110px}}
+</style>
+</head>
+<body>
+<div class="demo">MOCKUP: sample data, nothing is saved. Prices are examples only.</div>
+<header><b id="hname">Hotel Himal Lodge</b><button class="lang" id="lang">नेपाली / EN</button></header>
+<main id="app"></main>
+<nav id="nav"></nav>
+<script>
+"use strict";
+const T={
+ en:{chart:"Rooms",book:"Booking",stay:"Check-in",food:"Restaurant",bill:"Bill",clean:"Cleaning",set:"Settings",admin:"Admin",
+  free:"Free",booked:"Booked",occupied:"Occupied",clean_s:"To clean",out:"Out of order"},
+ ne:{chart:"कोठा",book:"बुकिङ",stay:"चेक-इन",food:"रेस्टुरेन्ट",bill:"बिल",clean:"सफाई",set:"सेटिङ",admin:"एडमिन",
+  free:"खाली",booked:"बुक",occupied:"भरिएको",clean_s:"सफा गर्ने",out:"बिग्रेको"}
+};
+let L="ne";const t=k=>T[L][k]||k;
+const S={
+ rooms:[{n:"101",type:"Single",price:1500,st:"free"},{n:"102",type:"Double",price:2500,st:"free"},{n:"103",type:"Double",price:2500,st:"free"},
+        {n:"201",type:"Deluxe",price:3500,st:"free"},{n:"202",type:"Deluxe",price:3500,st:"clean"},{n:"203",type:"Family",price:4500,st:"out"}],
+ days:7,
+ bookings:[{id:1,room:"102",start:0,nights:3,guest:"Ram Shrestha",src:"Walk-in",paid:1000,state:"occupied"},
+           {id:2,room:"201",start:2,nights:2,guest:"Anna Weber",src:"Booking.com",paid:0,state:"booked"}],
+ sources:["Phone","Walk-in","WhatsApp","Booking.com"],
+ set:{vatInvoice:true,mode:"incl",svc:true,vat:13,svcPct:10,idPhoto:false},
+ feat:{restaurant:true,housekeeping:true,sources:true,excel:true,email:false,publicLink:false,ical:false},
+ order:[],orders:[],tab:"chart",draft:null,hotels:null,billFor:"102"
+};
+S.hotels=[{name:"Hotel Himal Lodge",plan:"Basic",f:S.feat},
+ {name:"Lake View Guest House",plan:"Free",f:{restaurant:false,housekeeping:true,sources:false,excel:false,email:false,publicLink:false,ical:false}},
+ {name:"Annapurna Resort",plan:"Pro",f:{restaurant:true,housekeeping:true,sources:true,excel:true,email:true,publicLink:true,ical:true}}];
+S.cur=0;
+const FEATS=[["restaurant","Restaurant / room service","रेस्टुरेन्ट / रुम सर्भिस"],["housekeeping","Housekeeping list","सफाई सूची"],
+ ["sources","Own booking sources","आफ्ना बुकिङ स्रोत"],["excel","Excel export","एक्सेल एक्सपोर्ट"],["email","Email bills","इमेलबाट बिल"],
+ ["publicLink","'Book here' public link (v2)","'यहाँ बुक गर्नुस्' लिङ्क (v2)"],["ical","Calendar link sync iCal (v2)","क्यालेन्डर लिङ्क iCal (v2)"]];
+const MENU=[["Dal Bhat set",350],["Momo (10)",250],["Chowmein",220],["Tea",40],["Coffee",90],["Fried rice",260]];
+const $=s=>document.querySelector(s);
+const rs=n=>"Rs "+Math.round(n).toLocaleString("en-IN");
+const dayLabel=i=>{const d=new Date();d.setDate(d.getDate()+i);return d.getDate()+"/"+(d.getMonth()+1)};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function bookAt(room,d){return S.bookings.find(b=>b.room===room&&d>=b.start&&d<b.start+b.nights&&b.state!=="cancelled")}
+function tabs(){const x=[["chart","▦"],["book","＋"],["stay","🔑"]];
+ if(S.feat.restaurant)x.push(["food","🍽"]);x.push(["bill","🧾"]);
+ if(S.feat.housekeeping)x.push(["clean","🧹"]);x.push(["set","⚙"],["admin","🛡"]);return x}
+function nav(){$("#nav").innerHTML=tabs().map(([k,i])=>`<button data-t="${k}" class="${S.tab===k?"on":""}"><span>${i}</span>${t(k)}</button>`).join("")}
+function go(k){S.tab=k;render()}
+function tog(key,obj){return `<button class="tg ${obj[key]?"on":""}" data-tog="${key}" aria-label="${key}"></button>`}
+
+function vChart(){
+ let h=`<div class="card"><h2>${t("chart")}</h2><div class="leg"><span class="pill s-free">${t("free")}</span><span class="pill s-booked">${t("booked")}</span><span class="pill s-occupied">${t("occupied")}</span></div>
+ <p style="color:var(--mute);font-size:14px;margin:6px 0">${L==="ne"?"खाली घरमा थिचेर बुकिङ गर्नुस्।":"Tap a free box to book."}</p>
+ <div class="tbl"><table><tr><th></th>${[...Array(S.days)].map((_,i)=>`<th>${dayLabel(i)}</th>`).join("")}</tr>`;
+ for(const r of S.rooms){
+  h+=`<tr><td class="rn"><b>${r.n}</b> <small>${r.type}</small></td>`;
+  for(let d=0;d<S.days;d++){
+   if(r.st==="out"){h+=`<td style="background:var(--out)">✕</td>`;continue}
+   const b=bookAt(r.n,d);
+   h+=b?`<td class="${b.state==="occupied"?"o":"b"}" data-view="${b.id}">${esc(b.guest.split(" ")[0])}</td>`:`<td class="c f" data-free="${r.n}|${d}">+</td>`}
+  h+="</tr>"}
+ h+=`</table></div></div>
+ <div class="card"><b>${L==="ne"?"आजको सारांश":"Today"}</b><div class="grid2" style="margin-top:8px">
+ <div class="note">${L==="ne"?"भरिएको":"Occupied"}: ${S.bookings.filter(b=>b.state==="occupied").length}/${S.rooms.length}</div>
+ <div class="note">${L==="ne"?"आज आउने":"Arriving"}: ${S.bookings.filter(b=>b.start===0&&b.state==="booked").length}</div></div></div>`;
+ return h}
+
+function vBook(){
+ const d=S.draft||{room:S.rooms[0].n,start:0};
+ const srcOpts=S.sources.map(s=>`<option>${esc(s)}</option>`).join("");
+ return `<div class="card"><h2>${t("book")}</h2>
+ <label>${L==="ne"?"ग्राहकको नाम":"Guest name"}</label><input id="bg" autocomplete="off">
+ <label>${L==="ne"?"फोन":"Phone"}</label><input id="bp" inputmode="tel">
+ <div class="grid2"><div><label>${L==="ne"?"कोठा":"Room"}</label><select id="br">${S.rooms.filter(r=>r.st!=="out").map(r=>`<option ${r.n===d.room?"selected":""}>${r.n}</option>`).join("")}</select></div>
+ <div><label>${L==="ne"?"कति रात":"Nights"}</label><input id="bn" type="number" min="1" value="1"></div></div>
+ <label>${L==="ne"?"आगमन मिति":"Arrival"}</label><select id="bd">${[...Array(S.days)].map((_,i)=>`<option value="${i}" ${i===d.start?"selected":""}>${dayLabel(i)}</option>`).join("")}</select>
+ <label>${L==="ne"?"बुकिङ कहाँबाट आयो?":"Booking came from"}</label><select id="bs">${srcOpts}</select>
+ <label>${L==="ne"?"अग्रिम (Rs)":"Advance (Rs)"}</label><input id="ba" type="number" inputmode="numeric" value="0">
+ <div id="bmsg"></div><button class="btn" id="bsave">${L==="ne"?"बुकिङ सेभ गर्नुस्":"Save booking"}</button></div>`}
+
+function vStay(){
+ const list=S.bookings.filter(b=>b.state==="booked"||b.state==="occupied");
+ return `<div class="card"><h2>${t("stay")}</h2>`+(list.map(b=>`<div class="item"><div><b>${esc(b.guest)}</b><br><small>${b.room} · ${dayLabel(b.start)} · ${b.nights} ${L==="ne"?"रात":"nights"} · ${esc(b.src)}</small></div>
+  ${b.state==="booked"?`<button class="btn sm" data-ci="${b.id}">${t("stay")}</button>`:`<span class="pill s-occupied">${t("occupied")}</span>`}</div>`).join("")||"–")+`</div>
+ ${S.ci?`<div class="card"><h2>${L==="ne"?"पाहुनाको विवरण":"Guest details"} · ${esc(S.ci.guest)}</h2>
+ <div class="grid2"><div><label>${L==="ne"?"राष्ट्रियता":"Nationality"}</label><select><option>Nepali</option><option>Indian</option><option>Other</option></select></div>
+ <div><label>${L==="ne"?"कति जना":"Persons"}</label><input type="number" value="1" min="1"></div></div>
+ <label>${L==="ne"?"परिचयपत्र / पासपोर्ट नम्बर":"ID / passport number"}</label><input>
+ <label>Visa (${L==="ne"?"विदेशी भए":"foreigners"})</label><input placeholder="type, expiry">
+ ${S.set.idPhoto?`<label>${L==="ne"?"ID को फोटो (सहमति लिनुहोस्)":"ID photo (ask consent)"}</label><input type="file" accept="image/*">`:`<div class="note">${L==="ne"?"ID फोटो बन्द छ (सेटिङमा खोल्न सकिन्छ)।":"ID photo is off (can be turned on in Settings)."}</div>`}
+ <label>${L==="ne"?"थप खाट":"Extra bed"}</label><select><option>0</option><option>1</option><option>2</option></select>
+ <button class="btn" id="cidone">${L==="ne"?"चेक-इन पूरा":"Complete check-in"}</button></div>`:""}`}
+
+function vFood(){
+ const tot=S.order.reduce((a,o)=>a+o[1]*o[2],0);
+ const rooms=S.bookings.filter(b=>b.state==="occupied");
+ return `<div class="card"><h2>${t("food")}</h2><div class="grid2">${MENU.map((m,i)=>`<button class="btn alt" style="margin:0" data-add="${i}">${m[0]}<br><small>${rs(m[1])}</small></button>`).join("")}</div></div>
+ <div class="card"><h3>${L==="ne"?"अर्डर":"Order"}</h3>
+ ${S.order.map((o,i)=>`<div class="item"><span>${o[1]} × ${o[0]}</span><span>${rs(o[1]*o[2])} <button class="btn sm bad" data-rm="${i}">✕</button></span></div>`).join("")||`<p style="color:var(--mute)">${L==="ne"?"केही छैन":"Empty"}</p>`}
+ <div class="row"><b>${L==="ne"?"जम्मा":"Total"}</b><b>${rs(tot)}</b></div>
+ <label>${L==="ne"?"कहाँको लागि":"For"}</label><select id="fto"><option value="T1">Table 1</option><option value="T2">Table 2</option>${rooms.map(b=>`<option value="${b.room}">Room ${b.room} · ${esc(b.guest)}</option>`).join("")}</select>
+ <button class="btn" id="fsend">${L==="ne"?"भान्छामा पठाउनुस्":"Send to kitchen"}</button></div>
+ <div class="card"><h3>${L==="ne"?"भान्छा स्क्रिन":"Kitchen screen"}</h3>
+ ${S.orders.map((o,i)=>`<div class="item"><div><b>${o.to}</b><br><small>${o.items.map(x=>x[1]+"× "+x[0]).join(", ")}</small></div>
+ ${o.done?(o.billed?`<span class="pill s-free">${L==="ne"?"बिलमा थपियो":"on bill"}</span>`:`<span>${o.to.startsWith("T")?`<button class="btn sm" data-pay="${i}">${L==="ne"?"टेबलमै तिर्यो":"Paid at table"}</button>`:`<button class="btn sm" data-room="${i}">${L==="ne"?"रुम बिलमा थप्ने":"Add to room bill"}</button>`}</span>`):`<button class="btn sm" data-served="${i}">${L==="ne"?"सर्भ भयो":"Mark served"}</button>`}</div>`).join("")||`<p style="color:var(--mute)">–</p>`}</div>`}
+
+function calc(sub){
+ const s=S.set,f=(s.svc?1+s.svcPct/100:1)*(s.vatInvoice?1+s.vat/100:1);
+ if(s.mode==="incl"){const base=sub/f;return{base,svc:s.svc?base*s.svcPct/100:0,vat:s.vatInvoice?base*(s.svc?1+s.svcPct/100:1)*s.vat/100:0,total:sub}}
+ const base=sub,svc=s.svc?base*s.svcPct/100:0,vat=s.vatInvoice?(base+svc)*s.vat/100:0;return{base,svc,vat,total:base+svc+vat}}
+function vBill(){
+ const occ=S.bookings.filter(b=>b.state==="occupied");
+ if(!occ.length)return `<div class="card"><h2>${t("bill")}</h2><p>${L==="ne"?"भरिएको कोठा छैन।":"No occupied rooms."}</p></div>`;
+ if(!occ.find(b=>b.room===S.billFor))S.billFor=occ[0].room;
+ const b=occ.find(x=>x.room===S.billFor),r=S.rooms.find(x=>x.n===b.room);
+ const room=r.price*b.nights,food=(b.food||[]).reduce((a,o)=>a+o[1]*o[2],0),extra=S.extra||0;
+ const sub=room+food+extra,c=calc(sub),due=c.total-b.paid;
+ return `<div class="card"><h2>${t("bill")}</h2><label>${L==="ne"?"कोठा":"Room"}</label><select id="bsel">${occ.map(x=>`<option ${x.room===S.billFor?"selected":""}>${x.room}</option>`).join("")}</select>
+ <p style="font-size:14px;color:var(--mute)">${S.set.vatInvoice?(L==="ne"?"ट्याक्स इनभ्वाइस (PAN सहित)":"Tax invoice (with PAN)"):(L==="ne"?"सादा रसिद":"Simple receipt")} · No. ${S.set.vatInvoice?"INV-0001":"RC-0001"}</p>
+ <table class="bill">
+ <tr><td>${L==="ne"?"कोठा":"Room"} ${b.room} × ${b.nights}</td><td>${rs(room)}</td></tr>
+ <tr><td>${L==="ne"?"खाना":"Food"}</td><td>${rs(food)}</td></tr>
+ <tr><td>${L==="ne"?"अरू (लुगा धुलाइ आदि)":"Extras"}</td><td>${rs(extra)}</td></tr>
+ ${S.set.mode==="incl"?`<tr><td colspan="2" style="color:var(--mute);font-size:13px">${L==="ne"?"माथिका मूल्यमा कर समावेश छ":"Prices above include tax"}</td></tr>`:""}
+ ${S.set.svc?`<tr><td>${L==="ne"?"सर्भिस चार्ज":"Service charge"} ${S.set.svcPct}%${S.set.mode==="incl"?" ("+(L==="ne"?"समावेश":"incl.")+")":""}</td><td>${rs(c.svc)}</td></tr>`:""}
+ ${S.set.vatInvoice?`<tr><td>VAT ${S.set.vat}%${S.set.mode==="incl"?" ("+(L==="ne"?"समावेश":"incl.")+")":""}</td><td>${rs(c.vat)}</td></tr>`:""}
+ <tr class="tot"><td>${L==="ne"?"जम्मा":"Total"}</td><td>${rs(c.total)}</td></tr>
+ <tr><td>${L==="ne"?"अग्रिम तिरेको":"Advance paid"}</td><td>− ${rs(b.paid)}</td></tr>
+ <tr class="tot"><td>${L==="ne"?"तिर्न बाँकी":"Due"}</td><td>${rs(due)}</td></tr></table>
+ <h3>${L==="ne"?"भुक्तानी (भाग गर्न मिल्छ)":"Payment (can be split)"}</h3>
+ <div class="grid2"><div><label>Cash</label><input type="number" id="pc" value="${Math.max(0,Math.round(due/2))}"></div><div><label>QR / eSewa</label><input type="number" id="pq" value="${Math.max(0,Math.round(due-Math.round(due/2)))}"></div></div>
+ <div class="grid2"><button class="btn alt">PDF</button><button class="btn alt">WhatsApp</button></div>
+ ${S.feat.email?`<button class="btn alt">Email</button>`:""}
+ <button class="btn" id="cout">${L==="ne"?"चेक-आउट गर्नुस्":"Check out"}</button></div>`}
+
+function vClean(){
+ const l=S.rooms.filter(r=>r.st==="clean");
+ return `<div class="card"><h2>${t("clean")}</h2>`+(l.map(r=>`<div class="item"><span><b>${r.n}</b> ${r.type}</span><button class="btn sm" data-clean="${r.n}">${L==="ne"?"सफा भयो":"Mark clean"}</button></div>`).join("")||`<p>${L==="ne"?"सबै सफा छन् ✓":"All clean ✓"}</p>`)+`</div>`}
+
+function vSet(){
+ const s=S.set;
+ return `<div class="card"><h2>${t("set")} · ${L==="ne"?"बिल":"Billing"}</h2>
+ <div class="sw"><div>${L==="ne"?"VAT / ट्याक्स इनभ्वाइस दिने":"Issue VAT / tax invoice"}<small>${L==="ne"?"बन्द गरे सादा रसिद बन्छ":"Off = simple receipt"}</small></div>${tog("vatInvoice",s)}</div>
+ <div class="sw"><div>${L==="ne"?"सर्भिस चार्ज लिने":"Service charge"}<small>${s.svcPct}%</small></div>${tog("svc",s)}</div>
+ <div class="sw"><div>${L==="ne"?"मूल्यमा कर समावेश छ":"Prices already include tax"}<small>${L==="ne"?"बन्द गरे बिलमा माथिबाट थपिन्छ":"Off = tax added on top"}</small></div>${tog2("mode")}</div>
+ <div class="grid2"><div><label>VAT %</label><input type="number" id="vatp" value="${s.vat}"></div><div><label>${L==="ne"?"सर्भिस %":"Service %"}</label><input type="number" id="svcp" value="${s.svcPct}"></div></div>
+ <div class="sw"><div>${L==="ne"?"ID फोटो लिने":"Keep ID photos"}<small>${L==="ne"?"ग्राहकको सहमति चाहिन्छ":"needs guest consent"}</small></div>${tog("idPhoto",s)}</div></div>
+ <div class="card"><h2>${L==="ne"?"कोठाको मूल्य":"Room prices"}</h2>${S.rooms.map((r,i)=>`<div class="row" style="margin-bottom:6px"><b style="width:90px">${r.n} ${r.type}</b><input type="number" inputmode="numeric" data-price="${i}" value="${r.price}"></div>`).join("")}</div>
+ ${S.feat.sources?`<div class="card"><h2>${L==="ne"?"बुकिङ स्रोत (आफैले मिलाउने)":"Booking sources (you manage)"}</h2>
+ <div>${S.sources.map((x,i)=>`<span class="chip">${esc(x)}<button data-delsrc="${i}" aria-label="remove">✕</button></span>`).join("")}</div>
+ <div class="row" style="margin-top:8px"><input id="nsrc" placeholder="${L==="ne"?"नयाँ स्रोत, जस्तै Agoda":"New source, e.g. Agoda"}"><button class="btn sm" id="addsrc">＋</button></div>
+ <div class="note">${L==="ne"?"हरेक स्रोतमा कमिसन % राख्न सकिन्छ (v1)। Calendar link / Book-here link: एडमिनले खोलिदिएमा।":"Each source can have a commission % . Calendar link / Book-here link appear only if the admin switches them on."}</div></div>`
+ :`<div class="card"><div class="warn">${L==="ne"?"आफ्ना बुकिङ स्रोत यो होटेलको लागि बन्द छ।":"Own booking sources are off for this hotel."}</div></div>`}`}
+function tog2(){return `<button class="tg ${S.set.mode==="incl"?"on":""}" data-mode="1" aria-label="tax included"></button>`}
+
+function vAdmin(){
+ return `<div class="card"><h2>${t("admin")}</h2><div class="warn">${L==="ne"?"यो पेज एडमिन (तपाईं) ले मात्र देख्छ, होटलका मालिकले होइन। यहाँ होटल अनुसार सुविधा खोल्ने/बन्द गर्ने।":"Only the admin (you) sees this page, not hotel owners. Switch features on/off per hotel."}</div>
+ <label>${L==="ne"?"होटल":"Hotel"}</label><select id="hsel">${S.hotels.map((h,i)=>`<option value="${i}" ${i===S.cur?"selected":""}>${h.name} (${h.plan})</option>`).join("")}</select>
+ <div style="margin-top:8px">${FEATS.map(([k,en,ne])=>`<div class="sw"><div>${L==="ne"?ne:en}</div><button class="tg ${S.hotels[S.cur].f[k]?"on":""}" data-feat="${k}"></button></div>`).join("")}</div>
+ <div class="note">${L==="ne"?"मुनि तल्काल मेनु बदलिन्छ: Restaurant वा Housekeeping बन्द गरे त्यो ट्याब हट्छ।":"Watch the bottom menu: turning off Restaurant or Housekeeping removes that tab for this hotel."}</div>
+ <h3>${L==="ne"?"अन्य एडमिन कामहरू (पछि बन्छ)":"Other admin jobs (built later)"}</h3>
+ <div class="item"><span>${L==="ne"?"खाता बन्द गर्ने अनुरोध":"Account closing requests"}</span><span class="pill s-booked">1</span></div>
+ <div class="item"><span>${L==="ne"?"होटल सूची र खोज":"Hotel list and search"}</span><span>›</span></div></div>`}
+
+function render(){
+ if(!tabs().some(x=>x[0]===S.tab))S.tab="chart";
+ $("#hname").textContent=S.hotels[S.cur].name;
+ const v={chart:vChart,book:vBook,stay:vStay,food:vFood,bill:vBill,clean:vClean,set:vSet,admin:vAdmin}[S.tab]();
+ $("#app").innerHTML=v;nav()}
+
+document.addEventListener("click",e=>{
+ const el=e.target.closest("button,td");if(!el)return;const D=el.dataset;
+ if(el.id==="lang"){L=L==="ne"?"en":"ne";document.documentElement.lang=L;return render()}
+ if(D.t)return go(D.t);
+ if(D.free){const[r,d]=D.free.split("|");S.draft={room:r,start:+d};return go("book")}
+ if(D.view){const b=S.bookings.find(x=>x.id==D.view);if(b.state==="occupied")S.billFor=b.room;return go(b.state==="occupied"?"bill":"stay")}
+ if(el.id==="bsave"){
+  const g=$("#bg").value.trim(),r=$("#br").value,st=+$("#bd").value,n=Math.max(1,+$("#bn").value||1);
+  const m=$("#bmsg");
+  if(!g){m.innerHTML=`<div class="warn">${L==="ne"?"ग्राहकको नाम लेख्नुहोस्।":"Please write the guest name."}</div>`;return}
+  for(let d=st;d<st+n;d++)if(d<S.days&&bookAt(r,d)){m.innerHTML=`<div class="warn">${L==="ne"?`कोठा ${r} ती मितिमा पहिल्यै बुक छ। अर्को कोठा रोज्नुहोस्।`:`Room ${r} is already booked on those dates. Pick another room.`}</div>`;return}
+  S.bookings.push({id:Date.now(),room:r,start:st,nights:n,guest:g,src:$("#bs").value,paid:+$("#ba").value||0,state:"booked"});S.draft=null;return go("chart")}
+ if(D.ci){S.ci=S.bookings.find(b=>b.id==D.ci);return render()}
+ if(el.id==="cidone"){S.ci.state="occupied";S.ci=null;return go("chart")}
+ if(D.add){const m=MENU[D.add],f=S.order.find(o=>o[0]===m[0]);f?f[1]++:S.order.push([m[0],1,m[1]]);return render()}
+ if(D.rm){S.order.splice(+D.rm,1);return render()}
+ if(el.id==="fsend"){if(!S.order.length)return;S.orders.push({to:$("#fto").value,items:S.order,done:false});S.order=[];return render()}
+ if(D.served){S.orders[D.served].done=true;return render()}
+ if(D.pay){S.orders[D.pay].billed=true;return render()}
+ if(D.room){const o=S.orders[D.room];const b=S.bookings.find(x=>x.room===o.to&&x.state==="occupied");b.food=(b.food||[]).concat(o.items);o.billed=true;return render()}
+ if(el.id==="cout"){const b=S.bookings.find(x=>x.room===S.billFor&&x.state==="occupied");b.state="done";S.rooms.find(r=>r.n===b.room).st="clean";return go(S.feat.housekeeping?"clean":"chart")}
+ if(D.clean){S.rooms.find(r=>r.n===D.clean).st="free";return render()}
+ if(D.tog){S.set[D.tog]=!S.set[D.tog];return render()}
+ if(D.mode){S.set.mode=S.set.mode==="incl"?"add":"incl";return render()}
+ if(D.delsrc){S.sources.splice(+D.delsrc,1);return render()}
+ if(el.id==="addsrc"){const v=$("#nsrc").value.trim();if(v&&!S.sources.includes(v))S.sources.push(v);return render()}
+ if(D.feat){const f=S.hotels[S.cur].f;f[D.feat]=!f[D.feat];S.feat=S.hotels[S.cur].f;return render()}
+});
+document.addEventListener("change",e=>{
+ const el=e.target;
+ if(el.id==="bsel"){S.billFor=el.value;render()}
+ if(el.id==="hsel"){S.cur=+el.value;S.feat=S.hotels[S.cur].f;render()}
+ if(el.dataset.price!==undefined)S.rooms[el.dataset.price].price=+el.value||0;
+ if(el.id==="vatp")S.set.vat=+el.value||0;
+ if(el.id==="svcp")S.set.svcPct=+el.value||0;
+});
+render();
+</script>
+</body>
+</html>
