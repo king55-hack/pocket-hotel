@@ -42,9 +42,13 @@ async function dirty(): Promise<{ t: string; id: string; r: Rec; tbl: Table<any,
 export const countPending = async (): Promise<number> => (await dirty()).length;
 
 let running = false;
+// true when the last round sent or received something. Quiet rounds make the next check come later.
+let lastChanged = false;
+
 export async function syncNow(): Promise<void> {
   if (running || !loadSession()) return;
   running = true;
+  lastChanged = false;
   set({ status: "syncing" });
   try {
     if (!(await push())) return;
@@ -63,6 +67,7 @@ function fail(s: number, msg?: string): false {
 
 async function push(): Promise<boolean> {
   const items = (await dirty()).map((d) => ({ ...d, data: d.t === "hotel" ? (hotelOut(d.r as unknown as Hotel) as Rec) : d.r, ts: d.r.updatedAt ?? Date.now() }));
+  if (items.length) lastChanged = true;
   for (let i = 0; i < items.length; i += 100) {
     const chunk = items.slice(i, i + 100);
     const r = await api("/sync/push", "POST", { changes: chunk.map((c) => ({ t: c.t, id: c.id, data: c.data, ts: c.ts })) });
@@ -91,6 +96,7 @@ async function pull(): Promise<boolean> {
   for (;;) {
     const r = await api(`/sync/pull?since=${since}`, "GET");
     if (r.s !== 200) return fail(r.s, r.j?.error);
+    if (r.j.changes.length) lastChanged = true;
     await db.transaction("rw", [db.rooms, db.bookings, db.orders, db.hotel, db.meta], async (tx) => {
       (tx as any)._sync = true;
       for (const ch of r.j.changes as { t: string; id: string; data: Rec; ts: number }[]) {
@@ -130,22 +136,47 @@ export async function signOut(force = false): Promise<"ok" | "unsynced"> {
   return "ok";
 }
 
-let timer: ReturnType<typeof setInterval> | undefined;
+/**
+ * The free server plan allows 100,000 requests a day, so a phone must not ask all the time.
+ * Busy: every 30 seconds. Quiet rounds slow it down step by step to 2 minutes. A hidden screen asks for nothing,
+ * and coming back to the app, getting the internet back, or editing something checks again at once.
+ */
+export const BASE_DELAY = 30_000;
+export const MAX_DELAY = 120_000;
+export const nextDelay = (prev: number, changed: boolean) => (changed ? BASE_DELAY : Math.min(MAX_DELAY, Math.round(prev * 1.5)));
+
+let timer: ReturnType<typeof setTimeout> | undefined;
 let debounce: ReturnType<typeof setTimeout> | undefined;
+let delay = BASE_DELAY;
+let started = false;
+
+async function tick() {
+  clearTimeout(timer);
+  if (!document.hidden) {
+    await syncNow();
+    delay = nextDelay(delay, lastChanged);
+  }
+  timer = setTimeout(() => void tick(), delay);
+}
+function wake() {
+  delay = BASE_DELAY;
+  void tick();
+}
+
 export function startAutoSync() {
-  if (timer) return;
-  const kick = () => void syncNow();
-  timer = setInterval(kick, 20_000);
-  window.addEventListener("online", kick);
+  if (started) return;
+  started = true;
+  window.addEventListener("online", wake);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) wake(); });
   // Any local edit is sent a moment later.
   for (const [, t] of TABLES) {
     const later = function () {
       if (inSyncTx()) return; // changes that just came from the server are not sent back
       clearTimeout(debounce);
-      debounce = setTimeout(kick, 1500);
+      debounce = setTimeout(wake, 1500);
     };
     (t as any).hook("creating", later);
     (t as any).hook("updating", later);
   }
-  kick();
+  void tick();
 }

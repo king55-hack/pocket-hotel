@@ -57,6 +57,66 @@ describe("accounts and login", () => {
   });
 });
 
+describe("forgot password", () => {
+  const ask = (env: any, email: string) => call(env, "/auth/reset/otp", { body: { email } });
+  it("a code by email lets the owner choose a new password; the old one stops working", async () => {
+    const env = ENV();
+    const a = await signup(env);
+    const o = await ask(env, a.email);
+    expect(o.j.devCode).toMatch(/^\d{6}$/);
+    expect((await call(env, "/auth/reset", { body: { email: a.email, code: "000000", password: "brand-new-pass-1" } })).s).toBe(401);
+    expect((await call(env, "/auth/reset", { body: { email: a.email, code: o.j.devCode, password: "short" } })).s).toBe(400);
+    expect((await call(env, "/auth/reset", { body: { email: a.email, code: o.j.devCode, password: "brand-new-pass-1" } })).s).toBe(200);
+    expect((await call(env, "/auth/login", { body: { email: a.email, password: "secret-pass-1", device: a.device } })).j.error).toBe("bad_login");
+    expect((await call(env, "/auth/login", { body: { email: a.email, password: "brand-new-pass-1", device: a.device } })).s).toBe(200);
+  });
+  it("the code works once, and signs the owner out of every phone", async () => {
+    const env = ENV();
+    const a = await signup(env);
+    const o = await ask(env, a.email);
+    await call(env, "/auth/reset", { body: { email: a.email, code: o.j.devCode, password: "brand-new-pass-1" } });
+    expect((await call(env, "/auth/reset", { body: { email: a.email, code: o.j.devCode, password: "another-pass-22" } })).s).toBe(401);
+    expect((await call(env, "/auth/refresh", { body: { refresh: a.refresh } })).s).toBe(401);
+  });
+  it("a locked-out owner can get in again after a reset, and it is written to the log", async () => {
+    const env = ENV();
+    const a = await signup(env);
+    for (let i = 0; i < 8; i++) await call(env, "/auth/login", { body: { email: a.email, password: "wrong-wrong", device: a.device } });
+    expect((await call(env, "/auth/login", { body: { email: a.email, password: "secret-pass-1", device: a.device } })).s).toBe(429);
+    const o = await ask(env, a.email);
+    await call(env, "/auth/reset", { body: { email: a.email, code: o.j.devCode, password: "brand-new-pass-1" } });
+    const l = await call(env, "/auth/login", { body: { email: a.email, password: "brand-new-pass-1", device: a.device } });
+    expect(l.s).toBe(200);
+    const au = (await call(env, "/audit", { token: l.j.access })).j.audit;
+    expect(au.some((x: any) => x.action === "password reset")).toBe(true);
+    const lg = (await call(env, "/logins", { token: l.j.access })).j.logins as any[];
+    expect(lg.some((x) => x.reason === "password reset")).toBe(true);
+  });
+  it("an unknown email gets the same answer and no code; a code allows only five wrong tries", async () => {
+    const env = ENV();
+    const a = await signup(env);
+    const none = await ask(env, "nobody@example.com");
+    expect(none.s).toBe(200);
+    expect(none.j.devCode).toBeUndefined();
+    expect((await call(env, "/auth/reset", { body: { email: "nobody@example.com", code: "123456", password: "brand-new-pass-1" } })).s).toBe(401);
+    const o = await ask(env, a.email);
+    for (let i = 0; i < 5; i++) await call(env, "/auth/reset", { body: { email: a.email, code: "000000", password: "brand-new-pass-1" } });
+    expect((await call(env, "/auth/reset", { body: { email: a.email, code: o.j.devCode, password: "brand-new-pass-1" } })).s).toBe(401);
+  });
+  it("at most five codes an hour; staff and other hotels are not touched", async () => {
+    const env = ENV();
+    const a = await signup(env, "A");
+    const b = await signup(env, "B");
+    const s = await addStaff(env, a.tok, a.hotel.code, "desk", "reception");
+    for (let i = 0; i < 4; i++) expect((await ask(env, a.email)).s).toBe(200); // the signup code counted as one
+    expect((await ask(env, a.email)).s).toBe(429);
+    const o = await ask(env, b.email);
+    await call(env, "/auth/reset", { body: { email: b.email, code: o.j.devCode, password: "brand-new-pass-1" } });
+    expect((await call(env, "/me", { token: s.tok })).s).toBe(200);
+    expect((await call(env, "/auth/login", { body: { email: a.email, password: "secret-pass-1", device: a.device } })).s).toBe(200);
+  });
+});
+
 describe("staff and roles", () => {
   it("a phone first used by staff still makes the owner prove the email code", async () => {
     const env = ENV();

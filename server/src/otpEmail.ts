@@ -4,14 +4,18 @@ export const REPO_URL = "https://github.com/king55-hack/pocket-hotel";
  * The sign-in code email. Inline styles and tables only, because mail apps ignore most other CSS.
  * The code is plain digits with no spaces, so one tap or double-tap selects all of it for copying.
  */
-export function otpEmail(code: string, appUrl: string) {
-  const subject = `${code} · Pocket Hotel कोड / code`;
+export function otpEmail(code: string, appUrl: string, kind: "code" | "reset" = "code") {
+  const reset = kind === "reset";
+  const titleNe = reset ? "पासवर्ड बदल्ने कोड" : "तपाईंको प्रमाणीकरण कोड";
+  const titleEn = reset ? "Your password reset code" : "Your verification code";
+  const subject = reset ? `${code} · Pocket Hotel पासवर्ड कोड / password code` : `${code} · Pocket Hotel कोड / code`;
   const text =
     `Pocket Hotel\n\n` +
-    `तपाईंको प्रमाणीकरण कोड / Your verification code:\n\n${code}\n\n` +
+    `${titleNe} / ${titleEn}:\n\n${code}\n\n` +
     `यो कोड १० मिनेटसम्म मान्य छ। कसैलाई नदिनुस्।\nThis code is valid for 10 minutes. Do not share it with anyone.\n\n` +
     `एप / App: ${appUrl}\nGitHub: ${REPO_URL}\n\n` +
     `यो कोड तपाईंले मागेको होइन भने यो इमेल बेवास्ता गर्नुस्, वा एडमिनलाई सम्पर्क गर्नुस्।\n` +
+    (reset ? `पासवर्ड बदल्न तपाईंले नमागेको भए कसैले तपाईंको इमेल प्रयोग गर्न खोजेको हुन सक्छ। कोड कसैलाई नदिनुस्।\nIf you did not ask to change your password, someone may be trying to use your email. Do not share the code.\n` : "") +
     `If you did not ask for this code, ignore this email or contact the admin.\n`;
 
   const html = `<!doctype html>
@@ -32,8 +36,8 @@ export function otpEmail(code: string, appUrl: string) {
       <span style="display:inline-block;background:#0f6b5c;color:#fff;border-radius:9px;padding:7px 9px;margin-right:8px;font-size:16px;">🏨</span>Pocket Hotel
     </td></tr>
     <tr><td class="card" style="background:#ffffff;border-radius:20px;padding:30px 26px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
-      <div class="ink" style="font-size:22px;line-height:1.3;font-weight:700;color:#1f2a37;">तपाईंको प्रमाणीकरण कोड</div>
-      <div class="mute" style="font-size:15px;line-height:1.5;color:#6b7280;margin-top:4px;">Your verification code</div>
+      <div class="ink" style="font-size:22px;line-height:1.3;font-weight:700;color:#1f2a37;">${titleNe}</div>
+      <div class="mute" style="font-size:15px;line-height:1.5;color:#6b7280;margin-top:4px;">${titleEn}</div>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 10px 0;"><tr><td align="center" class="codebox" style="background:#e3f2ef;border-radius:16px;padding:22px 10px;">
         <span class="code" style="display:inline-block;font:700 42px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:10px;color:#0f6b5c;-webkit-user-select:all;user-select:all;padding-left:10px;">${code}</span>
       </td></tr></table>

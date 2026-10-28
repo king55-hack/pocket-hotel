@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="ne">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>पकेट होटल – प्रयोगकर्ता निर्देशिका</title>
+<style>
+@page{size:A4;margin:16mm 15mm 18mm 15mm}
+:root{--g:#0f6b5c;--g2:#e3f2ef;--ink:#1f2a37;--mute:#5b6572;--line:#d9d5ca;--warn:#fff3cd;--warnink:#664d03;--bad:#fde8e8;--badink:#8a1c1c;--ok:#e6f4ea}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#f6f4ef;color:var(--ink);font:17px/1.75 "Noto Sans Devanagari","Nirmala UI","Mangal",system-ui,sans-serif}
+.page{max-width:820px;margin:0 auto;padding:20px 18px 40px}
+h1,h2,h3{line-height:1.35;color:var(--g)}
+h1{font-size:30px;margin:.2em 0}
+h2{font-size:24px;margin:1.6em 0 .5em;padding-bottom:.25em;border-bottom:3px solid var(--g2)}
+h3{font-size:19px;margin:1.3em 0 .3em}
+p{margin:.5em 0}
+ul,ol{padding-left:1.4em;margin:.4em 0}
+li{margin:.25em 0}
+.cover{text-align:center;padding:60px 10px 30px;page-break-after:always}
+.cover img{width:150px;height:150px;border-radius:30px}
+.cover h1{font-size:38px;margin-top:20px}
+.cover p{color:var(--mute)}
+.box{border-radius:12px;padding:12px 16px;margin:12px 0;page-break-inside:avoid}
+.tip{background:var(--g2)}
+.warn{background:var(--warn);color:var(--warnink)}
+.stop{background:var(--bad);color:var(--badink)}
+.ok{background:var(--ok)}
+.box b.t{display:block;margin-bottom:2px}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps li{counter-increment:s;position:relative;padding:8px 8px 8px 52px;margin:8px 0;background:#fff;border:1px solid var(--line);border-radius:12px;page-break-inside:avoid}
+.steps li::before{content:counter(s, devanagari);position:absolute;left:10px;top:8px;width:32px;height:32px;border-radius:50%;background:var(--g);color:#fff;text-align:center;line-height:32px;font-weight:700}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:16px;background:#fff}
+th,td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;text-align:left}
+th{background:var(--g2);color:var(--g)}
+tr{page-break-inside:avoid}
+.btn{display:inline-block;background:var(--g);color:#fff;border-radius:8px;padding:0 10px;font-weight:700;white-space:nowrap}
+.tab{display:inline-block;background:#fff;border:2px solid var(--g);color:var(--g);border-radius:8px;padding:0 8px;font-weight:700;white-space:nowrap}
+.fill{display:inline-block;min-width:240px;border-bottom:2px dotted var(--mute)}
+.toc a{color:var(--g);text-decoration:none}
+.toc{list-style:devanagari}.toc li{margin:.15em 0}
+.pb{page-break-before:always}
+small{color:var(--mute)}
+@media print{body{background:#fff;font-size:12.5pt}.page{padding:0;max-width:none}h2{margin-top:1.2em}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="cover">
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAMAAABlApw1AAABfVBMVEUgRS8dQy0hRzE9YkAjSjJMckdOdEhEaUM5Xj0/ZEIaQComSzNGa0RIbkVTeEoWPCgqUDdGakYCJhQ8Xz8oTjUwWDwcQS5KcEUCKhdRdkk0Wj1QdkdXfUsuVTpVekssUzgSOSZZfk1BZUQ6YD5cgU41XDtBZ0IqTTUvUjkCIhI2Wz4/YUIyWjpgglA3IQkxVDpEZ0Y0Vzw5XEAtUDcvHwkVPCRLbkkSNiOhajpYfE0sGAMAHQ49KA/y5cAaPSrw4rr06MU2TC+dYjJ3QB2DZ0FJLhLr3bURMR8MLhtfSCtFTy9NOiDey5uraDKPUSYJJxd0XzoqRC0iEADh0KTSiUVCIwjp2as/RynPuYjZxJSWbkJbPyNlhFS5cjb778xoWjvflEplUTTGfz7Uvo80LhOQZDrBrIF+US5eNBW0n3nMtICrc0HEtpo5PSFabkhQVTRgeFD+9tenkmyXfFgtTEK7fkrksHfXmVtSYT70zn95ZkeMj3bDkFpzg2DjtkkA/9ENAAAACXBIWXMAAC4jAAAuIwF4pT92AAAgAElEQVR42oVdB0Oay9IGrIgNUSyJJRilGbqggKiJCpYES2wpGmPXGJN4U09yfvs3bffdF3Pvt1GP3Xl25pl5ZnbhOPp5NTY29jc+eAAvDx7Ip9qtNQSL/vNwqH3oobEePRyit/D66NH0o+mHD6fpff4qfG1IrXZ84d/Wj38E/x6shsYGWL29bbhaW9tam3CN6+V217nrcI3Cam4eHR1rHrPWxNiEo1+vxn78zf340t//gCH0GwiGyCJe02g02IlvH4q5CIFsf0SLAcB3DhkgGIDetH4A0EgAGAFiaGUMTWI/mu8D++sIQHPzGL8RABMTDtx69esePGAH0NsH/dr89oeEQOyfFgzTZOn0NG49mU7v09cJC38GPpxWLiA/9tPuND4gr6MP0Pxe7QMG4AUAAWU/OUBcwAsATBgA6JchBjacrce36IEH8I/+vLH/D1Wk4O5PU/DIpj8iYMoj8DpthhHFITiW/kKjIGgwPKD3f5wBBDQAsn+0WTCMaQcAgIZGjpfGRmv/2RcA4MEDM4Ik3NE0w2xa5vuPlGcQILwDPpg2ESCGfqZAP5NAR1CbV0NIjCcChgcUB5oNBASggR3ZyCHE/pVYekB8a39A3rftP9kv0TM9/d9RPHry5NMThGAA6NdRpJZF49ZWr0mBgPbAqFpjNgJMTPQ4Ghr0L2q0TBc2MArggOz/kASI3uG/GS3rMby++XFzsvsJY4m2QPkAPMtJQ9mvSNDaqkgAQQQUEBeI8eAA3Ht8nVAAwAMGghr7cfdV/CgAGOPTmsGPHj569D8APPmRiRVjN5+Q0WR/uwohilPFYiuIWhEDeyCRCATG3VEGYEEwd/8egBrrkW2aAENDZvQggkf/cz0G+x9/OokVF4uxH2+ICdb+Iwce9FtpCAHoIBIPJJqajDQ0aiAgEBPiAwih3obGBo3A9EF/v80FjAF3/9FfrH987+PHj9/8OImd3y3Gdt88hh8ZYgiMoL3f8gAmUnsiam2CF4ohtxFDY6NCXzOEkAMNVEz+5gLaf5WD2AfTnD+nzb2GRTuO76qPEcKblVjs1e+L2A16AGo217R2q5hR6mhokERqAfBSJcAsKiwerbMiyMyhEkINKoweiJbg+O9XRbj9oQlBVIO51cZ6pKxHCt/EYtdfL4onmImQx8oFD4TG7IMGeyVoM2sxs9iKH+GAxeEeBUDF0QN8IRioJKCGtQ8ZLNY6QUx/9Nhm/6NH5vtvdjOZ17+/Ptsu3iCCR1wNtAPYC1YearASKYRQE1FAiQkuYkYJEyE0MUAAGsUHD+xR1P/AJADs4PS0ab8Yb3eAuT5CCvry9e3Xi8XiLbDgESXgoaEHVirqvycnsm2tupRBGsJEZOVRM3psabSBk5lEUYPJAIogk8H2zPn4f6wnH08y61dfv/7+vVrcJQDT05JKdTLCxK3FhJWGvBxCmIXgRaUhMr9ZAzBCqFGHELtBUlC/pSKGyHYpwP9j/59YEfTkz0fIoYsXsBaLN3/eaACi6wjAAyuPCg1UJYOXBFDAJIFVBCR+bCRmDAhD87hf9p+EBNavRw+nH/7XrX8iS8x/8+n2pFiM0SoWizcf3zwasi0OI0NLNBgu4BACKREwEmlzc0rloIn7WYj2vwHip0FpOlbTOnyGtGb+CwSw2wCA5q9ADYstXiyCDxa3Y7FMZvfjp2mjpAiXDQ/onkBIPI4I3AHLBQaDJ7QDehy9Ngc0NjxQMSTxg6/TFEPTj7QDHv1t7xUCMj+TyS+efv/6++v196/X59v5TCZz8+PTNIkpSqmMAP/a/UrgbYIXUtQBcUDdvRAiDAMDE47eXp2HFJ8lAfWbKUhUtBTdGusfWw548obMz2/GFr59e//+28u3716+fXn9TEGAQJq2CprBgl4bAKoCTYGAqUcZwMSYMHhsomdgoKfHkVWG038wghSL+2uE0N9K1xMjeMj8P7z7RTD/+/u37969f/vy3dvn78ELixBHEEhPnnCvLCHU32+IIQCQ5ZagVSvqcWkqSUk3mzIOA8gAwG6gUqY53C9CYtow33SAbevV7sdi+e1XYP7Ll89fEgB45+37t9dT5xdAhhOEQGKQaMyCqMEeRAIAY2jcbcq5sbEaLYoAeklKGdVYkijnUPLA9NDDaTOE/hL9b9D6Nx9XMPNsn377Cea/fAsOePf+Ob73/O3bt0+fPgUIxeLJ7g8ozPhb2/tlPmFngSTScfYAmO82Q2hgzLAeAbS19fb2GqlUyaH/HkF/M/8jbP6PXTJ/4dvPb+9fkukKwMvngOD50xdP0QvFWOZk5eOnjz9+tAsDGlUEiwe8ZghZDhASG/azB2z2P7AkHSFgF+gu/ZEhfszYucnc3EDeVOaj/RA37zSA94LgBXoBkmo+c3NykvkxhH9JlwKrJWjjPGrNVQwPmDmU0mgb0b9BYBhqyBQSDy0X/C2APmWwXMViiwtXP799fQ5hD/aTAwDA+5cURM/h5QWspy+YzplYZmWaJjmNNcMJFULj41qO1gAgy9EHE3ELQIOl6NRsxVbIpIn5a+5/c5MpFhfP72D3f4OlaDlknnfigXcURE+fkwtonb8GDLHMj3Z2t+WBtl6jlCUMDyg1bTXzPfxGAei1PGBRoF8qgcyxzBxqL11vPmaKsaOrq9+/r58+nQL59vt66ut3Wl+nfsPb399/Tz29vr6G7X92jus1hNHuNO6WqYfaCIHqKhPsgYDFYdZzEwYNsBK3tbUZEBpNChsRNM0S4i/2v8HXW0CwLQvkwyK9kXXBSz6ib4EYyt98pPix9TS9WSGxyFFdyXxaS3AJFgf0DGIWQgRt2gf31BxNhOz7byB4I/+5zcjaxAX2bcrKqxXjz2FFxg9vPvWrxtsqZVkebnmlDgQsKeGriaEeI41qBPA7GhWPRU4P2R2gktCT2gVRtHtCzFw+Ojp6ncmsHh4e8To8PFw/XF9fjmWK+NFqJnNycrP7Y6hfDdFqslCrNGUwWEkEpJL5EEBzDYsxjyoPcDFACNQS4K4Y3QAKOZnh3qPwG/HBY6hjnz7C5v7a2jv+UMwvb+3vH8O//WNYe3tX+3f5zV/7Z8eXxczJx0+fQJmqkbgphtqM8Zw3EUhoLTT6dwAQQw7MujqIGmQ8QTM65QEeRRgOqBVAlpL4ASH0z9L+0kI+9mXrmG2HdXV1dbaYLx7vnZ0tZjI/3khzbLX1NgBeacq84wGcjgYYgE8ARCSEeE0MOrxUOdpMEjTq0W77kDVMMRH8NYxQyoEPMh8ODrYgKX2em5uZm5mltTP3ZXPz187+1lEepkRqRsQtTb8uAg1MAKurHFceGK1ThwPGVJQcQB7QQaRSqaVGbVNdVQZqchAED755gn0AECG/Ojv3+Vcmtvb5ANYcrZm5o83Y/s7SXZ5nLNND0yKnzVMaa7ICNPZ6uasPcD/GHrDEHBk/yAAkhqxEyi2BNZSTeRxwQEvo2kpGQH6A9TCJABpsfYllFrY+WOusuLn84ewSCjbPGfVZgVmFrcGK14snHJrDhEBxQFLQRA+azwBarUyq5UQ/u0DOlYbUuYtS0X/B8AdrweJriHUQRYtFaogzesX4X/Hk45/HD6fVhMgAIDoCAkjL6YQOIUhCPtVTYhumPDA4bADQFGjgMxuVhWgoTf28TK64cbfz+PGbP7ughs6vvn0/zxeL0s5n8rZFDX5s5c0THtJRR2nWsYY285jJC2lUq1EfVzLzYIAADA4TgNYaCnAlQBoPtctAyCaF9PRBueHxm083seL23c9vL19+P8UxxPrpi1NZU7D4vRcvUE2f/MAJBc+2aDjaq8YSbVkLgJfnKloLKQ8MjA1MDDCFBUBTbQzRcQ2fUKrJ7rQ1Tn9cs/308ZuPJ8Xtxd/Ux7z8PrUNE6Hr3yBD39kWyOqvp4vgBOjKhvr5mEBzWJHY69UNWYLHQtZUggBQCGn7hx3KflseNc6JpZLZh3GYcT7ygqQCc3TQ0xdXbP/L9y+vF+Hj05ckpC3r4Svv376/lsZymo60uB1QEFQEEYe9eMIxrrSETwPApQKIADTVxBAd3VJTaWmJ6WlDTNCWr5zwgrr65M1KJpZfhj7y/UtQnmjn14t8Jv/sN0GwALwHAG/ffn0B8DIntx/bjUMyUaO6kHnJATKYcwsJEEFEA+ghDqMHmlQpMOUcVeIHKob4aNsaKsKWF2PIy0wxs/LnBhQETCHA3O9TF6eM4BkguPhq98B7QvD8eupZDL56Au2AJG3OHfcmcwmVRTGGmsUDgKBnQGchBNDUZMWQGg3RoasiQbtxLsAIHuKeH/2CdQhTQzgFiN3B9r9/+fsZhMez7xgqX08hhy5ev/sLgOfPp15cxGhMNKR4zAAsJYENWQDaej7hcMtwFCaLkYEIOUBIoEPIBkHOvvVVAx6sGIPdaRz9f/g8d/B5CzNODOn7HkMfRXMGNh4RTC3mY9tT300GYASB/U9xQLEIToAx0WOrFhjTaeRAk8GAUeFABNYA0tjgQKtlf1uvbiwbzZsGcETDw119HPxmNw+SZ2Z2ZgtqVuz1FYTP+9+vtvOb6x+WN/PbUzBSefv2+gIrw3dwwkuLAW/JfmiNT9FbMZxPtDOLrYmEAJCOkrOQBjAgACZ0CJmluEGLCTXcNXg8rQa70+CBfP7DwdLMwV1sMXaOM8SXv8/zmc1fa/v7v6CHOf9NCOBwJvbs97uXL037nz9VrfGzbawKtx+n+60URFLO26TGKjKYUzc9IpGJgQjZX8OBVjqi7TViyLhvQ4WA1yM+32MAczNLv0A3vPr5/SvY/xoYfbd2vHe8dgfkfvaV6PoCLFz8+l3HP9pvAXgBUyKEsPvjI3ggC4uLGOw/ZqFxbijd1hkfO4A5MKjrAANoVSHUqz1ACHg4NK0gsBMeYgidHXxYhSiH8H+L4R/LFy/XwPzjvf3LYj52AQjAWKhbMKn7btt/CwBDANqc7K7c3q6c3GgKeL0SQQHbVII5AGlIc5gANHn/wmL2Qb+WpMoHdMmAOHAJ2fPi+8/fb9//htqbX97bv9rbOVg63lv7sJyJLU59pXiHORb5w9p/bf8z+Pfi2cV2TAu+H9lWUaOUhsABclQvZQC6GcxCPbZKjB5oUkFkIOi3aGAAYCoDgOIRpJHlbzjH+noORkL47x3PYg+zdry2tp4pbp9/JXNxgrJ4fS9+nvE/mLI8uwA34WgsdqKCqIlI7CYEUdp/RgD7zy5QDBAPAABvmylJ5cCvXx91TwsEaQqo9mL1+n4N9r/GQrC1d7UFncvMzNzczvH+1h187tk12nv6DBBsgz9qI+iZsV7DqAtqYn+rdUqJHhgn+6mf8TWLB2jVhJAmgS2R9uszAssH0lX+WYFKHLvDOdz11CIcB1xu7e1tHeD+A4KDpf39rS/Q/S6eTqG55/Du9vkUvA+C9PwFDrbEbDAcXnBdQDm5yfaqc2I+JUYKR/HCGbYDzcxiXccsLTTepPWQQqBv3/SbR5VDhACkHIrPzOLvb1+fPr8+jeU3V8/2r45noH+cIQ/MHczuH6+drW5mYudTT4mq4I/tmhXbjsnCD/BWy8dGrANeSkIJSUHgAp9c1mqOgAciKKbB/DjbP5h2AFCmQZt0lg29Jo1tU/ZpUnQg3uDPLV+R/c/y+c2jvb2z/Tlsfz/DojZ4dm1v//hoM5N/TQiwD8CSbW9wrMlXBo8NyH5U096EtMPRKAHwqaFKJHIvgjoFgNITvUYMcTEzqxl5ALYf7Afx9vXp9RRk/82F46uzfWzfDz5/+PPpn6XPRIUtrAiA4OKUfPAM+4DV9aP1+2sBFvQIn6CWeTmD4kgrIDkIAfgUBaQQWDnIDsAu6eQunXV1tJ1c8ATt33718xvKykU4zPuyf3a2Q7OHz/9suDyO+Q+fZ0BkAJX31qC3jy1qBLHi5TFNiXhYhOOiK/rg+Aru5PRTN8P2k/VySBxFLU0ItP0TOgcBBywAGENmV4MuaDfqMTMZLjGBePv2HegLVSq/enZ8trdEo5PP/5T+g2tj62AW5kEzs/t7W2ergPb8KeUc+O7Fs2Mw/BitRvsVlr0zBuBtMwG4A+gAkKIQQnRRJZJCAGPsgB4GQB4gBE3GfEUDaOzvt919bR96fJtX9D2H6nV4DPbPEnkPtjbI/v/4P32eZTZv7a3tHwKCZ08paS7GNr/srK0t7exs7eDa2lpb24K1tnUMABqVA8ZVAGERiFIzxlMhBBCpoUCnwz2OsgPt9+rphMwYcWRgXkDG9Wgln3/1DY8BnmH2X9u7Wpvj7Pn5Hz8D8KQ4G2FFQCLA912cI4CLWP4OpnNbWztLS0s7ZPra1v7a2v7aXjGzm1XzIMlA0YBbAGD8pHykhO5RwPQAjmSyxoSrwS5KuSA8us2A1nwxhSKn+GVtD8TDgQLAEfSf/6RkHAdEmD3e2/oC2WcRUv/5RTF/CQB2ds6+fLncJwhrgAEWASD7E16vpjDarwA0p3D7LQdQBA1qAONGW9Nra80eSC6SqwHt03ALaPv8FMInlj+CTLN0QJPDORNAlFIq0WBudv9sfxXOBLahYsGwYn9rbedyGQ8Rindb5ASYYu/vA4CbLAVQIsH2M38hBdUpDjMCKAM9hhYlAAGLxfYJV2MND2iW9mkXJCiKF1BC+8czPPlkAGW/3+/yYwjRZ2HBXHcGKhqoDuzcipt3s/s7d7HN13d3C4uby4QAIuh4/6qYv8m2KgBq/+vIAWoigSSAEOrR7STZr9No0186M6lmtiFLe/unXZKOuydgweycAjA3c/BhBV0eTYT+HGgECGFrFZQf1rDY3dLazpdY7HJ25+fPb+v59SW0H3qg/TME4DUBQAmIcgRJP6/aMd0Qx5ECmIXcAcGgRHVvNmuqavVwAk0FONGGE5ZPJ5tHB7OMQGDMyDs0kwYWw/aTD5Y3i5df7tbvPsyCvcv5y9mr19vX/36D93bAekRwRRww7cca5mYG8Fw3BUJiQPUC8bjiMHOgppapVNqoc6nZYAIP8ISFASxR+JN4mJ2ZMxbav4TWIwAQe2eYN9eAAJmjmZ8Lqwvb//77O7++s48AjjUAHIg2UQJlDqirToSgmaQoXVEBAFgE0sNpTKPE4nFhcathv7pIZ3eA3JQhAEuU8GXvRclJ6MzI2cYSA7iEWIH93/my+WX239/bsfN/3/0uroLta0TiRUqjCW+TOhRwSw5VzVhKhxAHUM9wSDzgdo+bxbjNYkFjo+1aODnBuoWpACgMtOn8HzyYIQzoA/j6a/TAGqRPSEF3CODn7+t/EcAinKBRCO1hIdM5FGQ09vKW/TYOaAoPmgAAgtdrCyGbDySX9ssdummSFMQB2mrSPswCDp0ZyqFg/RKGEQHYIrZufcn/mf2X1vuv+df7oIMQxNkihVCiqUnnIADAdwx8cjzWzEmU27EeoPBgCOzvBgCBAPvAy4nIqwFkG0wA6uxeuptPN5uHBxTlkO3RXovES0sUP0tg/w68YQCYLdd2do4Xizs/0f6X3xc2F9ZIC2kATcQAyUHWQx9SnERT7IFkUukIcEB3t6PO7WYA2EYgCK+9FtiSabtukhkABjkLoc+2hQE0h0dkB4hmOSMhBHl/Z2HzEBG8+/c6HzuDU8xjdAEAuMnSlXU1S1FDXWwnsReTMobbn5TB7nBnOk0ekDyKowDs57ytSk5kbQ8tsE2K2i0AuNkHl4d4oK3W5QH448M/uHZmBQDpN+TB8uby1c9/4SAn/wUPkcExoEaxEjepMsxCOioOkIGEAqA7emJAdyd6wK0zKRFBS7osDptM+7UPEMDJ5uHnGUqTSwd39msFm/8cLB38CefKueo/B1uzAODLJSg4UD6oPKEs/Py5DloCRkhIYguAnG1TCBGHR9Xp3hhNJAYGDPMJQGe3BiCCTh0WKEGUtbvAcgIDIAbPbWXwug2tVXwpFrdmDv6gOPUDgCUGsHRXXMX1ejW2uvVzPb/4Gt5//Xr1cO/YAtCkKSy3hLAh9mkdYQ0VJQcZAMQDKKu9tZKOr7UbCPoZAIXQLIiITGx5Qa9fr4sw+f38B9uDEgGAc/uznQ95OvOLwb/VHQAgHX0RIkkA4J/n+97umkducBLSDuixeQDG726rHKtykEUA2SxloppywDA+nnAWmkEVlCkuL8BNDrzosbwMWwyTX+gvyQNzDOBy50Mmc/7qFZ74nQOAVxenOF25uLABSBgUlsuWzRhCqdFUSk20DADdGoBbC6Imnk22ZdWyzVgaawDMagBHC8tgOrxCkCxmNtEDpaDnP7l/5pa0B/K/f8J1zO/fpxDAM5zbAYBtGwDiMA4j+FgJX1OQR2GB+RFjKjpo9wD4IBBI8IyulQtatk3s14+NaLwPYIZyvgDA3bcAHFze/vjx4/aSAYAWOsvnr9/j/cvnFwggJjO5mAYwPm7piDqpYRD/2AmkyAGSRkGIqiRkAaAf1JIOWcAAerP6ZnhNDLEHAAAkfPGAArCKAGa5NECUWQCm3uGI+u2zxZ2fdzGazsEZAQGAOuAdH08ERMhF+bIo2O/TNUxT2BAS3d0EAL4bcy+5AH3QxpNSexQ11CQjAYC6wQYAcgtxYGaHLklgOWY1epaPXdPJzfOL4s5VflsBiH1Z40LGAPQsxVQRBgOwisVVBFkA2AlQCFkSebGasfW92QYzGelAUhwAHs9RFnq9fEQcgMxYJBJXS7lc9c/czhZJiaWzTOzr86d4agAAfi4sXiCAC+hN4WaReEDsV42YT7ViKQGgkmjIUhIWAPxpnJOyIgIAHEa9lIiyDY36LhQjaP/EWQhjaOYsnyEA5IHXywjgM7bIHs/In5mtHQIwiwDePn3PHvj5826TKHBOHrhCAGQCzCLqDADYzdM8wkqiPNTqTHcKAGyYQfhh6AXgdkKTVxaGUTZbE0Z8DQGXBgClbOnyPgDwwMh/PBs5DQA8sH2Nx5foga2fp9vbEkIZCSEvT6NJyKkAghxkqQhOQXokp0LIh9nKh+1ngHzQRJeNGIKXmNwrAPTj5RAFcWBuiaUQA3h9hDRYXWYABwjAgwCYA7MIAA9qEMDaz1XOQpoDMfAAn2dErWmiT2cgWwQNYjPTiXWgu9uDHqhD3eGOqkTk5VwqJwaWD7J8J6DR8oAAmDNCCCa4CkB5w+8vEwAUc7Mf4FFxz18QgMW1n3d5SaPoARwt3mQDxAFq5uuiPkpB2E2mNAMG7POINALAEIL9xxgiACDIxyWG8PZabRgZNYE8sLNEgtoCAIc1RQXgZn5+/uafmZ2l5dgihNCHYmzqLQOIXf18TRF0AdO6DKXRGIcQnykhAFqsQ23291hFrLM76Ol24OCxDn0AvkMXJDCIEhJEbTYAgoCZAACOAMASA9BZaHVxlaXEEtAbGzJ4XY5hGt0v5s/f48Hf83M83+D9P7/IZC5hPE9plG/IoSU+LsKUf1L3RqIAIMQUDgY9jlGfAHArEjRpIreJuMYTXMxGpjISDyzh+A0AHAEAkBLw7/UqDHE/IL+5qRcAWzAeuvj6gk4uQUGowzG4oQYzaq7EASFBlI6VRoUBEZsHFAPYA8iBZt+o0ACnqQEliKxcxDQWZacgNDSyByiG5qiQMYBVJSV2qKMnJxCAtZ1fm9vXL17wHXa2HnBs54/2r67gOuyNF3sBmgXRQBHjx6cdEDEPxpQU7aYs1EzBRrUA+cMIvEpSCJHZC6CvCQTdLBEAOxrAKqZQAYAhhNCWZsgD0A9AS3kJB/jXDEC2HykASgIB5AGAGqj7hMHNPjMFWUUAMlBaHEAASHGjD5jICY2giRCQrjB5kKV0hABmdmjscPAhhgDQeni5EQCz0m+yGoW50Bb89/QrPIjDsv/ZYmYVjjyuLmMAIBrgWZaPr0r7Ur5Rtn/AKAJSAtJiPoYQPtcB+wBSKfEYRElCzRqJCjVcJhgCYEekBAKghgtYvBgTAMThHShkIKehn7+EsTAQQCIIaXABSRQccPUFbuMnGIAUYWgmhcKRezIaR3LogWAwiB5oxiCC7hOZzKKOsqlqDfAarVeJa5JG/B/JQsCCJQLwa5Htv8GWEjoyjn+0f2cVAUA/vPMrv70Ij0F5hg8n2L5A+/OHa3hMdgdXhxIUAnVYxKLUS1ICpUaArB8wDsYohIKQhNgD4ANoferqqByw/bDo4p1kI74Pabihlzwwh1u8s0NaSAFYtACgfxDAawGwtbWe396+OH8mD4nYLuKEHgdD6/nMCpcwH50IjFIVHjWKmKGjB7GIpakMsAfwDHyUXECtEPU2CaGCTqgmgF4LAE8/CQC37KsnAgBz0M6SHcAa3ECA8xF+jC6csOUP0X6YDa1mTqKWBoryLGW0WToxvGeZ1I1MSMsgITG7YHRUZKk4AQCAE1qbRBR5hcr4phfTUTvOhT7P0OHAAfTrRwvigVUG8HkOTV+iwzwFAKa7W3g8Q3d485v5VajBOJrbhzMDkEL6aVR8ehShAEgRjqsQ6tRJyFMDQNozt8QRPhKh1gvw2tDQDo96yyzKozQO4REbxdWisTK/7u7Yenwjkzk8C4Dx6OWvVbj9EVs8/HJ8DEeuCOA13NsCAG5fnX2cKwerNhHEMigNDBAAYxEaPWLuhZ/lIBJhhwiaWkWc0rVsLx+A9Lav4PWYjH6cDN32oTszGb7xDZ9cpcNIjKEjAoBnMXglZx/E5+XlJQy18JgbkujaQqyI/VjArTS0ehqeiL7hpACEQsPQCgxbDugGAMoFqp65VY+cwGSkcikeYrIXenuhDBeL2+aWW49Zkk/E4EAMDpTgGAwe9UCFjBBgzFzRSJqP6c/O8MEpxZMfXpoG+ZT9vlHb1YIBY5gyTK2MVQfgAoUAGKUTQRMBpyO+T8RcICI09N9C5XoF685Y+PHCAgx7lun+DGYYukZwvAZSAjmwxhhonr63x5cOwAO/wH8rXrqgSFWYJCjU4GajD4CJNAKg+NE6KKhCaEyzACH4pCIDBLi/rwB4vV41rgAWD8F1IVFgtC8AABzISURBVDB1nR7TBrM4OHY9XzjndQQvIKyPVvPLFPRr5IHLqy1eGsf+Pj1E6AtcysnPJ9yqhvnkTEk1MmqcG8cYooNhS8gJgAG8z8v1WJUzKunsAalpTQaAtoaPN5mY1N3X99cyLZiAXvI6gxt0d18u768vd79W8a7NfILqlzCACOwD4zEDRcR+OBUD+0OhUNoGwOPxOAbQT/TMPdIZCAKZtOiqjAHEhwdZeKgJ39OTq268MsbDNfipDNRXICvVfFEWWp85SQXkNAn3n7swPcvS83QiQEhCiMPHAy/19Y4J3H8iMp5nMoQoX9RxuxWTTY0NAExTMnbbbWYil2u+bJgPl5zgIXHzfBpfR3KGHCB9TEqOlPTJ9jB3AqwilAM8DnhofUQyETmQfRDlDs2tSloTHiDS0BRgZG93ca3I2sV/NUt96X+vlWgim4hGZQ7qo84E7R+12gCjhukS1m0FUD0AgBs4zAHArVqDOhoOgDqnadE4TV0Too1wWIGrEf79ZenZEawsX8hty+JPeLP8c3yjQ53L081WasE4g/LdLC2jk3ymBA4I4e6HQlgEunUOhRhyJAEBuCBC9Szlk/aG+johAkz8mjif6okLE0KWV1JUq860/EqPKJTHpcIlIHBigp58jS7DReUwm5pIn3QxZLweRMj2J/FUryceohIQonMxvZADyeQAI4CzfJyCCQT8E1EWRuNclBOkjszVym0zkZvfZdtZcGTbGFkTPSSJLkTjbT6af0b5PpycRvKNArZfJkH2+MEVCnEjk9YlgBwAJE6iDwBAM2uKVLP4gJOpnGFii5OgWJKJRat6Ieu5+STjaRyDt9dkxuptVbKWny9l3LoL5CYnk7NlkILBI21MJAkBhJuflHloaFj38hxCSGEAgK0CkB1jKDWK5isf0LVl1tfqNgI9dZcGUOMLEXx0700uX/ENOEKNLwkrgNjB1IXX8RhLLvZBECsGJwkABRCPgiwAZD6zGACADyCMIpyJxHypCKokjNPzBgao1SRrTNNbW1tNPK38Dx8FYEBUDw/G6S1ZH2Xjo3V6jCgCGj2Aj/YhBySTcq4Ng6BQWlvPKoJDaDCZjMcBwRgXNDsE2agAY0A644G4NGxodaJJ46C9l1rRyhbrjs4rKSpB8c9FJqrKl6/Ouho6mlIZaCACRiXj6kwsrQPIyqGQRBEA8TyZHBuIaCc025zA24WHIHSORr0aXothBjQJFbytxuV/IkpCT/i8WV8oPjE4GOfgV68U/OpiK1UwHEcTf5N8qQD3P04HAmqY1a1FEDEAAQxyqsITKCnJZD83NHx4zstN5jdRGDEGapy9/+9qasp6Cn1dsKIJfYQhsS/phyVQiiZBYP8Y7CfbD8FBbUCoU2ZZqg8g+z0KQDyJmkPzAH6Z2zPZMllqmaSVy006gxHiIRxFI4Jxyaqy096m1lqrE3T1giCON2WD4T5YFR6+sVCh2NcEwEEizbFS0AXg1aZkMsLJiPvIUFoiKKj3X3sA1kQPQsYgUto6kCuEw+GCtcJduW6vVx7ZAoRIYGnC8pzwcrCb0cP3n8lZmPnH0QO4xAMUQRD6dT6z/I5q+sJDbiGz1DthlVzkAXOY6FH2d1sA4hxDY2PMA1Dkgcku+INdalXpg5wvy0+iSWPgAI/wFJHpeQialDta2TtMeATQ1ddFANyqCuhDGIpZkQFysQwebpuMVGgLywMyiRiuZQB5wOXA+6OD8QmMIhRFEbxXAQDGEUCXQtCnVsrr5udOG+eMpOOFHzso0lVd32syAeA2pNB2PYDTyQcOkjD/YxtGDxhOAoJ4shLGn8kNxHUraTWSEj8IAO0HD/RM0Pgigk/lhnIkMBkmB6j4Yfu7qj748+MyueCOmZMQRwwaSzVbPuJPJQIMINxF0t/NBcxtFAAWERBDGASQEZMEoAA/Ec4NGBcjqADAoUC9th8BDIfiUAmwICepOyMauBlAXxlWLpcrC4LCZKKO5RG8VdmdHu5CZZrNHU+g2EThScIH3mSDwAEEEPWR9Sq9SRcfSfk4paYiyTF60PMYcAA8ADGUS+rjALuGIPMFQCiEqWgCmC9PGxAZi+bCFENRbCohniM5jqdwEjYRASS8gYGgc3KyxRF3eyHFArHxWXLBXLCuOdgy2dLiDKYSdAPIzVkIQghFQ9SXiOCFye7u+rGohFDaibmuFOyJ0HOYYSlIwaYhB0I8RkwH0zhJDAZVJ2B4YBjvkaL9eDlfIKRyFLV9kToWRolEGWOgq+BMYLvclHXXl4Uh4WpLykutWwAzUjbgqcgXwuFy3ItOyAa7KkQhmF35mgPxrgLGdyFHTWQ0Wl9R+a7akowAguZBcDzFLHxftVqtBHEUHYRpKDeThv0EYJhzKSnrAfZfqlxAD/ZFcF6PfAsECwQgl0B1l+2uaGL3gTkbCTWEyQ5Uwooy8BUEjB5gAD54mg5fIB0uYF7omkzgs3YEBsrhLo240BeE5/MbG1a/gD8ZBrM7CYDNfodDACCNB0nVDeALFkEEEGYApFai0Qj8qq5woYIs9rboxMR/GLiBlcGbyKa7ONbU1wol4gAXsroExE+wgL+6q1CmUVxikMCQe3nV1401GwDIx+gB3QZY++8CBKhSMdOypADbJ9APygNV9AD2N+Bo3NmuQgXEi9cZlt+PIOlvFJxZzDrZYSkfmLr4e8JBL2QhBhBNuL3pMK1CGeN/NJAkrLAzuNH8E+nR5sG+PtMHCkCwJoAQQie5YBhH1yCb4lgOUBqJB6pJnzQ4gRRWoq5wJeCLxuUv9U06Wsph/qALo93rVsDKpVKZTKt0VRIBL1fiijuRDaGDwNgKqn6gb4V9lasHoo6wXysDKRsA8gCFD55odOskKgA6+cyDeIDCmleKpES4K46HJIBh1Ouh3x6eBAAVJDj80SgkSspP+Icq0Kgo11SSSIdUDlNxLpWIJjboJyrR7CB7CO0fAwhRJzKrr8sDGbQ5FfWwzxyReLC7k6B15To9Hle9VGGlIpT1QAEHzqrZ/jiWA5iAJckDOcrCAACXL5pIyoZ4EoFQAeMGfOFFSZDwTjK0NCCoEn/BUPpKYjJcTnu9gToAQMxO9Fj2p3B4nqriF8ItUdCdUEYDHWH6ahxKE9QBlAIjA9hNUhXzBNF+0qD1LkUBByBLEwYoBggBriWzB/BXhatxmvElQy3KpaPuhIMybCENvsCymogytJZEAOMbsnc6G6XGMRBNQ1aF1oUAhLsqrj5lPwgHbL94LyopnEwApmiqSgRJQ/JPw2YAgMmeYRGhQdl9ih8XVzEEQCtNcglBDA5iNh1LTUo8VqqVarWLEx/8cae3DvaV4hJIyA0bu6Arlwg46Ctd3PRC+gzA7uPYJLBBib9P7X+UL9KMRfnzFX9LqQVWqaODABQ24ggAvxaeTHIr2akTkAc3v15FkACAeREMXUB0E5chG6VGqBAT4VSmgb0t445TUS7kAj4x1OugyC8HEi1hlC/Ic7fcwI0SAPQA50nahT6oyCTbo4RYq17+SwDAwQDwRyaTIuM6bRrOZQGAEsEQAEBoGOMI1TUC6LLl4i4sAlhKAwigL8wAUBkEnAX8XmhXSlRgywG+fhSV7p0BhDUAIDxLiGa3ysc2DOGCXwDAghAalmmcp9ueQCmCHFQbGEAaD3BQmSIHWE6b5bBQyFFCSnDETCbURDDQEq7aPRBVy0de8gUchbApy7smA3SKF3Dwp+y9U0FCSHEgbQZQvZmBHE4CEER8wTQhCEkuTeVUCKltqZRCviRO78Be1AXlhPTjqQQnUijGQG/kfiogd2aAxvjWJ7Fu7IkjgCFUx7m5DxQyrY0N2NSNjQ20JV0hACPJ4c5um4KzzCcEJLDhW9IMIA0xFIJsSjkclpOylcPlCXGLCq9RF32pa9DLl9qgmNLH9Ql3nLJo2JH10agtkCxFEnj5NkCJi8qdh1VRV6cbSDwal2Id1QUoiakwDjsZ4jrQEcfqZRQA0RBovNPh9zsgu6LOo3IACAAD/YKBHCuyFOoVTNrQZkd4paQk9EUC2IsEotIsJBPuqNTVdAKxgfoo9DndACHgkHKdziYkvfUlo6A6fTkuzMEkmgw7ly7F02xBD/3arnJcucfmAd59eOSdw0MSA9NQJ6ZRCqPQcDpZ5sTXkxqT2y74vDI8/Ip2hFmDeiB/R0OkeyvACUioytBSHHJ6sIptTMUDJGYt1Ofx1gUUyDJMMsd8njDLzVIINz9dqhZKSXQAFNQcJawuyEhBl8dqwrQD0HwnAAD3oA/SVJAhkdJWEAAsSnF9VCj7D/1aKsnZDopDpVzp0v7AXlGsK4Sr5SpvAWbVhMR6FPRzIE4ZFURJNNUMfVeBE0+4Ui5DWwBfK0ETGQIPdHDVCMPDKLpclvlWBIH5EEUYXsiATkZAYQQrXuF+YJCOGVBms/10+hwlZUAglPlhTwL7BuaDTumYk8IhkBIu/j7Iwj5I/rw3XQ4f7HqoyghUuUGCwywIsomrS/2iQqED9FC9VhCEwOn0owvIA9QtpDUCAsByuistHQI3/HT0DFODlKPAWo+tr0LpCTTTgCcREmEv+atQcEVTowHmfV+qDkeH3O2BpcEIZLxgV0HbzqsbCZEOhlgQU2mpCACDAgzA76hnBAwgzR1yiAHgDwdhuIcAeiYifJCDCCLJlKeqZxVgZRXUJB+uQOapqFYAzQ97ouCyOuFGJIqpLBnhGhWu0jgBDMVgUzWn0jkQxzIA3K1y64O1ucVKQPVcwCCEIIZaHPX1NOQKCoROlBRpDSDsgQExpzdpN+UKQCrirCiJUXFE8Gndm2nIFvFFPVa37OdZbZQBVFJ1BCAVqjJ3y5Q0kx6IckZQyTl6kriBSMugJ9dFEApdORfpN1sN85MPHB5xQTcR2dJFyHxYId0i8LB1gB0BWEBKepwtEINJXzTC54Q8G0y5A6lul9PpCsZxUIKlI0VZMh6X2WckFQ+yiZT040nQ/y5nCxgzDPey4qjeyP7uTo9/BB4LVXJ1WxKa998pEURZqL4eW4VgtxQE1KZQDyiXxcnJ9oUPpcDx0wRsNj3vQ4SGqnRKhV+BIIfJC/3jUS3OvfnkfYw5RHMTq2rhX6LpOEyiOYAZAFlF01wzg0oN4/2nEEKByhM7SqfSHCAhcNf+goCa5khSJVY+EBqjc0LOVPROShY/H4f8GHOIPkbNFTdWSC02n5pgqV6eGgXq1PsvAJAHAqGbiBBiKoe4LJOX4aQBVR6dO9AFAHxnQhBYi0zk+7YpdeOEnhaLgrBnYMC8B03jf7wHoQHgH8cJoj6G6bZ6GKMEYwlg+0sOCi0NoVO4jMmUACgEg7Bdg3RiOMBZldig7JdDITJO+cS6dRvhGzOkcgf4x3v4AgqHUY8CgNbDXazO7mCnvg3RrQAY5uv997coDxAC5rJAYFERJyqE4twx97AX4FWFBPMaEqNF9AHDI/yenLTQZsu5Hf823BRoYXvU9ndyEsHxg+GC+nsVwK8QQBfnwE8qF4gXQFoHuT3gFRc3wNAeh8AhuFY/P8Hny0l4lwoFmR+nL8EnkJB0UDS/Mm8t2If4vLnS6IQQfQU3ioegOIGjGZCKH7G+3kYAJ4xesQvtcLiowWQIgqCbuhvpD1BgcyRxOA0OzsOTMB828xzv9he8Pybcnl+5xaeq+XV4u0LCI3mIj0y0nsbmRzqEP4uL//MDFNz84a/1X7dpCn/pXGw9vId7YF2/nJJBW/zURZccDuY2I6j3qFsIGEad0iGQ/fSCPX9oBR5P+Op2gjTGLb6/QiSPzx8u0CMNp65fLdzOw6lncuEa15SsV+vz6fkF/SF83/o8AIDPvDqEiOW971THwKw/LQfcKwAEoAMAOKlhYS94PCqKtA9UKKEDBmlqsXKKAJCEyfjtq+dTpyvEwd11MZ8gHAKCeQLwfOq5GEwApp7WAoDPHAVDxFt9iGRrAGz1VwMo4f6XOvCThgtUOu0kddep44iClLigPICtf08cPXC6ggWJ7X8FEQP4nl+/OooPcAjRM75y3AiAU/W8SD/mwW/wmVdHwDq6Cmo7Bfbcq1+2/S8hBAJgQ9BtQei0iBBChQ5vcISKHjhdwfEFA3iFAOaP8L115OzK4SvY9Fe3EGF46Qmd9GqXScsAjm4Ui2FDCMAttYXpYFDfozH5a8WPAcCP2w8L+3qcTygITH0sJaJPFYhhiiIB8BQAUOuMABYAQGhlAe3fpTSJYJ5fH84DC4DJBGAlTWPLEO/3vFGA8TOntxukjCT528LH5XLZAkiFP+y/BUC8IDxGALQjrCt44CKBFBcPvFrmO2UMIA65hGJJlOv8+hTjwgIAAJ5DxFHuD9k9QADW0QMbLN5U9Bjip95lkxBiv5/neAQAujIn+4CKsodzEfeZVBA6LSJA4AMHTjGO+dHbp/C8dwvgDTIZOckJiSOLZJQGgD/MAORnF36ksTCsGx4QB9Rr/aNGWJrATsXflpIBoIYITGaPUqcqlogKAgAWchPeEoCQBsC7zjynCUeIAYR0wOgFmSpOP2mEkEr8NYcYZv6B3fcTfy0AWBscnEpNCBBGKpKMbBSPr+C2v+KFz963sJsmw64ZAOw1J6qVINVB8AYCSFIGqwEASdoCgMzzGANonT2pAVY9pBSwDjYfALQ4eSkuMxHq5TYCiZLOTiOhgnUA4HSdn0FiHZ4OW4fQwjw3WLjrCCBNrS17gzwAKmQB6sKCPP3ELead+fVTAuCR9FGz92b0GxVMA5h0oKiQMHIRhnobCh7cBS1pEacQOt3dmN/AlHkqHDicUlEPCAQO6QMGQF8hDlw/vz6CeoCLOLaxDtuxvEHjN8/9+bNLTRAt8yF+9P6jB1patAvEC/UqkIy6ZuXTNHlghd4PKgAUNFPru4RgHh0wdcgTziAlLUijlIkJwGF6EJUnn/1uYAgtb3Tbpm8uV232NBIoKgi1RkYcyn7FBHtd46TKIoVV9nBIAQiSdQiAsyEiwEK2e0Q1eSVI6Ze+hcIJOry0eAAXzHA3CAB8eVkl1uD9+b/oN6cKHvinrYdXB0MSH0goWflIsYEUFrmhM7hLAIIKwBQBiLNMQylBkg6qFTtAA0AIncSBUyVRD+c95AGdWH+t2HK/o6Z/YfOlgoHx+M9h2a9c4LpX12Tw0hkkrb67ALu+y/mJvUHpEmsxC7WnlGEk5gRAkOWymYUA+i5M1Nennmp992qlniZYVu43AVD6McMHXpQHsD1wOg0yGEVBpSQPt5ye3QXIPLseoqAwlJQeVWMyA+T0BkrBYFCTmNNAUOT0K/wH38YAjMy64rKP/zl+DPlp2k9LhZBCoMLIyqkGAqK0Z/726Oh2ng/O5/F/MjMfYtENMk4amnkZ+5CTsP+ZVwB+SAqlZ/O53QAAt4dWy3M477Ltvt+p+NuCAEz7IYMygI4WzQLFBMd9MntULHXTOcrGhodrXHqDRKZaQaZn0JKCmCiJrTJs27Atj/w2a9WS168CSOS/PX7MENJccFhVgZygyWAxgpSXFOlQumahegral0e+m3/YY616lTg9xu0NhxVAVvosYe5U9ivjBcCk4gC1yYyBvSAusAbDVjiR9sXsGtQlIkhJhzY9raV4LZKgIAjqeQlNrjzGzov0p+GDlf5LHUp/WvHPIdRhc0GL01bWrIaZ/0N/kwywLvEHlXAFPOkgAeI3ynxxFh/j4UuQ+XSvZwHL/ZwLnQ6VUmBkSsW3ZJQv0wWOyUkTgrOmMDsMhwoWj67PNFDFGwzWFvO7lG35lcPNo8656iWMug3JpvafyccBoGIZ7G/h/e+4l3+0B/BubqmWCYzBJfMM4TVnJqs2oMU6KoL6cx4LEA5Y5cEu+MblwlGgp95Tc2LkUtWHzr3kr3f4MR5aqHwZ4sduP3oA7hiDF5QjJKHiLrhGqvDbPR0VTWncKvZ9Nz0pAkxS0e5SFT5d6dBAGIMnmC5VKpWcB4hCNsOnNsK5oDRcNHMWCiMAPx1G+/2cReAzfR2lLgcnmVJH6b/YTwAQQ8ekQQPhgitXGAEEhYLDn8v5Hf6SP+cHBHAb0dPpgYFMfXenswX31RMuB3MFl2uyBNHg9Hj8ThfkDThcyFUdjnJl2AkmtrhcHTDoL7nqHa4OONzt9pcAg2MSpjodZfhljlKhnCt3+EfK8KdcI7kWR4ez1FUaAQLk/rL/uRoA6IL7IZQrVB31cNrnhzskhRJcgYJDUFdfpa/c6eiqVMIdw2W4zAKbVV8q+AslD9wvDLtKYY+nWnYVAJNnOFfp7OwoD/aVuv1hB9w+7KqvOh0FuPzi7C5Xy30uf1e5r1QOV6t+h7NUGIH46QhXw1UXXJGpOLrAAx2FDn8uXLpXvu55gDBYRGYALvgjOX+4HPaXOkYK5RLYWK10g1fD9ZVcd31fyQmh01X2OByeSqEaLMPFsErZ31UPADyFUtrTPZwLV6qFluG+Do+/yxXOQdyAqWFHsFr2h0su+O1hiEs4iPKj4MfDpElw3UgY/iZgCec6Cn7AVi23WBVsxIqhXK0HtAtQNfkZgKMazsFfqQKKXEsYPlP2VCojVUelo7uz3NEBz4VXzkG41vsLfk8l19lZqvirnmCl7AnXA787y+UguqRS6nRVu13gL0+15A+76svljjBeCfbDOVsJ3lRLLuAAwHD54bi4yw/XhqoYUgXwCDjAqmF643O5ewA6bBUBi7irHK4vh13wCwvwZzucYWc97HChHsJhspArF3IO+HyOs0fYX98BAKsd9WBRIecJO/DkCnbA31EAzHCfr7vF5S84qqVSwVFfrjjCOX8ZrPIXKiX45bALzi6gmSPXBb+nBLedCzkEUPJXC2W/Ff+TNSTOKQDqW6BaWH7wAwfBu7mKK1ctV1ocFUd9rozx2VXCz4TLcLqI4YsAIFPVw0cQJR3VSrkEsY4JbATCu1rqdkAyKnvK+OUKmORw5cqeDvzRHNyL9MPny5h24IJuXw6/tVICzlU7quD7Dn+5YCigyY4aCudymgMdAqJFSgL+h4YAmJilVVYaq8WZq3TAHllln75WT3kWMmZQznNdMmCGW9J4WbIeM5DxEy7UOLBDfqcaO2DmaOGpIVldygE6g8KTtRQ2ACg3gOYoYeWGV7+OJl1cVHuKe5RzWOXaqNsuY55ASopPIFzmd/Ev0lqH/gAdu8Bf8xuiswQuGvmvJSBXC0AFEm2AkBkLudNYIhCxShv2u/R/lCgTBNIf1hjPUpnP2mlcwtceRDVIzil1WG8t9Wxu/n0Ak1KSCYOEkt/pd9qXX721EBgWqq23nGBzkJLJjMFvzBv8ErMlXmR76b/svQDAVFQDAJBOdpgI/C3K/pYWOwiHMcewGSiNhE0ImtGmfpLjhm1Hw3lmyNaXDO1fm3eM/+RMD4wQQ8w4arHCyO9UOpUoAfnOYdesfzHU6kpqv8Xpd5piX51X4LhB6Fv6a/NiVICc8oFjMmfuP71VEKy6hn5gJLRpzGoy7S8G/+/lVI0i4vAbx11iPwVPiUHw4MQe9bT7Ej4MYJI+NTmivGCQucW+/BYgv0Xo+4Hk+i+mK8r6Lctt+6+zTUkPfuzFl/demZ5TABjOyIjygEagiSzZCEx3itDw+22ZSWFw3jfeLzHkl/2vNd0vcd+hNLMpezqswpXTO69gCIA++HgSPjM5kvtbOuqQmmZtPrLZb6e0zDKcNTTwG5tPn/bfc0CLn9Im73/JVJ0jfxE/bHwupyNoJFdxwA1Wyx81RcEWS/AGZwNSdpwyBjAQGH5w+tUHfp21/JblTjP2OfrF+BFtudjeoVJO7q8L1HxfVSOYzE3eqwrcirJCKlnR5FRZyWqh9UjGrBZm3v1b4Leosm8Gz4g9dVrMtVDQg9ty5b5q9f8ALZ9vlAFTpoQAAAAASUVORK5CYII=" alt="पकेट होटल">
+  <h1>पकेट होटल</h1>
+  <p style="font-size:22px">प्रयोगकर्ता निर्देशिका</p>
+  <p>सानो होटल, लज र गेस्ट हाउसका लागि सजिलो एप<br>फोन वा कम्प्युटरमा चल्छ · इन्टरनेट नभए पनि चल्छ</p>
+  <p style="margin-top:40px">एपको ठेगाना: <b>https://pocket-hotel.dahal-khani.workers.dev</b></p>
+  <p><small>संस्करण १.० · २०२६-१०-२८ मा बनाइएको · नेपाली र अङ्ग्रेजी दुवै भाषा</small></p>
+</div>
+
+<h2 style="margin-top:0">यो निर्देशिका कसका लागि हो?</h2>
+<p>यो निर्देशिका <b>कम्प्युटर वा मोबाइल राम्ररी नचलाउने मानिसका लागि</b> पनि बुझिने गरी लेखिएको हो। कुनै कठिन शब्द प्रयोग गरिएको छैन। एपमा देखिने बटन र ट्याबका नाम यसमा <span class="btn">यसरी</span> वा <span class="tab">यसरी</span> लेखिएका छन्, तपाईंको स्क्रिनमा त्यही नाम खोज्नुहोस्।</p>
+<div class="box tip"><b class="t">कसरी पढ्ने?</b>
+पहिलो पटक प्रयोग गर्दै हुनुहुन्छ भने भाग <b>३, ४ र ५</b> क्रमैसँग पढ्नुहोस्। त्यसपछि दैनिक काम भाग <b>६</b> मा, र समस्या आएमा भाग <b>१०</b> मा हेर्नुहोस्।</div>
+
+<h3>विषय सूची</h3>
+<ol class="toc">
+<li><a href="#s1">पकेट होटल भनेको के हो?</a></li>
+<li><a href="#s2">सुरु गर्नुअघि के चाहिन्छ?</a></li>
+<li><a href="#s3">एप खोल्ने र फोन/कम्प्युटरमा राख्ने तरिका</a></li>
+<li><a href="#s4">नयाँ होटल दर्ता गर्ने (खाता खोल्ने) तरिका</a></li>
+<li><a href="#s5">पहिलो पटक के के मिलाउने?</a></li>
+<li><a href="#s6">दैनिक काम गर्ने तरिका</a></li>
+<li><a href="#s7">मालिकले गर्ने काम</a></li>
+<li><a href="#s8">कर्मचारीले के हेर्न र गर्न पाउँछन्?</a></li>
+<li><a href="#s9">सुविधाहरूको व्याख्या</a></li>
+<li><a href="#s10">समस्या आउन सक्ने, किन आउँछ र के गर्ने</a></li>
+<li><a href="#s11">के के नगर्ने</a></li>
+<li><a href="#s12">सुरक्षा, गोपनीयता र ध्यान दिनुपर्ने कुरा</a></li>
+<li><a href="#s13">अहिले नभएका सुविधा</a></li>
+<li><a href="#s14">शब्दको अर्थ र सम्पर्क</a></li>
+</ol>
+
+<h2 id="s1" class="pb">१. पकेट होटल भनेको के हो?</h2>
+<p>पकेट होटल एउटा <b>होटल चलाउने एप</b> हो। पहिले रजिस्टर कापी, डायरी र कागजमा लेख्ने काम अब यही एपमा गर्न मिल्छ।</p>
+<ul>
+<li><b>कोठा</b> खाली छ कि भरिएको छ भनेर एकै नजरमा देखिन्छ।</li>
+<li><b>बुकिङ</b> लेख्न, पाहुना आउँदा <b>चेक-इन</b> र जाँदा <b>चेक-आउट</b> गर्न मिल्छ।</li>
+<li><b>रेस्टुरेन्टको अर्डर</b> लिएर भान्छामा पठाउन, र खाना बिल मिलाउन मिल्छ।</li>
+<li><b>बिल</b> बनाउन, मोबाइलमा हेर्न, WhatsApp वा PDF बाट पठाउन र प्रिन्ट गर्न मिल्छ।</li>
+<li><b>सफाई</b> कुन कोठामा बाँकी छ भन्ने सूची हुन्छ।</li>
+<li><b>कर्मचारी</b> राख्न र कसले के गर्न पाउने भनेर मालिकले तोक्न मिल्छ।</li>
+</ul>
+
+<div class="box ok"><b class="t">इन्टरनेट नभए पनि चल्छ</b>
+यो एपमा लेखेको कुरा पहिले तपाईंकै फोन वा कम्प्युटरमा सुरक्षित हुन्छ। इन्टरनेट आएपछि आफैं सर्भरमा पुग्छ र अरू फोन/कम्प्युटरमा पनि देखिन्छ। यसलाई <b>"सिंक"</b> भनिन्छ। पहिलो पटक खाता खोल्दा र साइन इन गर्दा मात्र इन्टरनेट अनिवार्य चाहिन्छ।</div>
+
+<div class="box tip"><b class="t">एउटा उदाहरण</b>
+रिसेप्सनको फोनमा एउटा बुकिङ लेख्नुभयो। केही सेकेन्डमै (इन्टरनेट भए) मालिकको फोन र म्यानेजरको कम्प्युटरमा पनि त्यो बुकिङ देखिन्छ। इन्टरनेट गएको बेला लेख्नुभयो भने पनि नष्ट हुँदैन, इन्टरनेट आएपछि पठाइन्छ।</div>
+
+<div class="box warn"><b class="t">एउटा महत्त्वपूर्ण कुरा (कर बिलबारे)</b>
+यो एप <b>आन्तरिक राजस्व विभाग (IRD) ले स्वीकृत गरेको बिलिङ सफ्टवेयर होइन</b>। यसले मूल्य अभिवृद्धि कर (भ्याट) र सेवा शुल्क जोडेर बिल बनाउँछ, तर कर कार्यालयमा पठाउँदैन। तपाईंको होटलले भ्याट बिल दिनुपर्ने र कुन सफ्टवेयर चल्ने हो भन्ने कुरा आफ्नो लेखापाल वा कर कार्यालयसँग सोधेर मात्र निर्णय गर्नुहोस्।</div>
+
+<h2 id="s2">२. सुरु गर्नुअघि के चाहिन्छ?</h2>
+<table>
+<tr><th style="width:34%">चाहिने कुरा</th><th>किन चाहिन्छ</th></tr>
+<tr><td>एउटा मोबाइल वा कम्प्युटर</td><td>एप चलाउन। Android फोन, iPhone, iPad वा Windows/Mac कम्प्युटर सबैमा चल्छ।</td></tr>
+<tr><td>Chrome ब्राउजर (Android र कम्प्युटरमा) वा Safari (iPhone मा)</td><td>एप ब्राउजरबाट खोलिन्छ। अलग्गै Play Store बाट डाउनलोड गर्नु पर्दैन।</td></tr>
+<tr><td>चल्ने इमेल ठेगाना (Gmail)</td><td>साइन इन गर्दा ६ अङ्कको कोड इमेलमा आउँछ।</td></tr>
+<tr><td>इन्टरनेट (पहिलो पटक)</td><td>खाता खोल्न र साइन इन गर्न। त्यसपछि बिना इन्टरनेट पनि चल्छ।</td></tr>
+<tr><td>होटलको विवरण</td><td>नाम, ठेगाना, फोन, PAN/भ्याट नम्बर, कोठाको नम्बर र मूल्य।</td></tr>
+</table>
+
+<h2 id="s3">३. एप खोल्ने र फोन/कम्प्युटरमा राख्ने तरिका</h2>
+<p>एपको ठेगाना यो हो: <b>https://pocket-hotel.dahal-khani.workers.dev</b> (ब्राउजरको माथिको लामो बाकसमा लेख्नुहोस्, गुगलको खोज बाकसमा होइन)।</p>
+
+<h3>क) Android फोनमा</h3>
+<ol class="steps">
+<li><b>Chrome</b> खोल्नुहोस्।</li>
+<li>माथिको ठेगाना लेखेर खोल्नुहोस्।</li>
+<li>दायाँ माथिको <b>तीन थोप्ला (⋮)</b> थिच्नुहोस्।</li>
+<li><span class="btn">Install app</span> (वा <span class="btn">Add to Home screen</span>) थिच्नुहोस्।</li>
+<li>फोनको मुख्य पर्दामा <b>पकेट होटल</b> को चिन्ह (लोगो) आउँछ। अब त्यही चिन्ह थिचेर खोल्नुहोस्।</li>
+</ol>
+
+<h3>ख) iPhone / iPad मा</h3>
+<ol class="steps">
+<li><b>Safari</b> ब्राउजरमा ठेगाना खोल्नुहोस् (अरू ब्राउजर होइन)।</li>
+<li>तलको बीचको <b>Share (शेयर) चिन्ह</b> थिच्नुहोस्।</li>
+<li><span class="btn">Add to Home Screen</span> थिच्नुहोस्।</li>
+<li>माथि दायाँको <span class="btn">Add</span> थिच्नुहोस्।</li>
+</ol>
+<div class="box warn"><b class="t">iPhone मा ध्यान दिनुहोस्</b>iPhone को Safari मा <b>Bluetooth प्रिन्टर</b> जोडिँदैन। प्रिन्ट गर्न "कुनै पनि प्रिन्टर / PDF" प्रयोग गर्नुहोस्।</div>
+
+<h3>ग) कम्प्युटरमा (Windows / Mac)</h3>
+<ol class="steps">
+<li><b>Chrome</b> खोल्नुहोस् र ठेगाना लेखेर खोल्नुहोस्।</li>
+<li>माथिको ठेगानाको दायाँ छेउमा <b>इन्स्टल चिन्ह (⊕ वा कम्प्युटर)</b> आउँछ, त्यो थिच्नुहोस्। वा एपभित्र माथि <b>⬇</b> बटन देखिए त्यही थिच्नुहोस्।</li>
+<li><span class="btn">Install</span> थिच्नुहोस्। एप डेस्कटपमा राखिन्छ।</li>
+</ol>
+<div class="box tip"><b class="t">इन्स्टल नगरे के हुन्छ?</b>ब्राउजरबाटै खोलेर पनि सबै चल्छ। इन्स्टल गर्दा फोनको पर्दामा चिन्ह बस्छ र खोल्न सजिलो हुन्छ।</div>
+
+<h2 id="s4" class="pb">४. नयाँ होटल दर्ता गर्ने (खाता खोल्ने) तरिका</h2>
+<p>यो काम <b>होटलको मालिक वा जिम्मेवार व्यक्तिले एक पटक मात्र</b> गर्नुपर्छ। यसपछि कर्मचारीहरूलाई मालिकले आफैं राख्छन् (भाग ७)।</p>
+<ol class="steps">
+<li>एप खोल्नुहोस्। पहिलो पर्दामा <b>पकेट होटल</b> को लोगो र तीनवटा ट्याब देखिन्छन्: <span class="tab">मालिक</span> <span class="tab">स्टाफ</span> <span class="tab">नयाँ होटल</span>।</li>
+<li><span class="tab">नयाँ होटल</span> थिच्नुहोस्।</li>
+<li><b>होटलको नाम</b> लेख्नुहोस् (जस्तै: होटल हिमाल लज)।</li>
+<li><b>तपाईंको नाम</b> लेख्नुहोस्।</li>
+<li><b>Email</b> लेख्नुहोस्। यो आफ्नो चल्ने इमेल हुनुपर्छ, किनभने कोड यही इमेलमा आउँछ।</li>
+<li><b>पासवर्ड</b> बनाउनुहोस्। कम्तीमा <b>८ अक्षर</b> हुनुपर्छ। सजिलो पासवर्ड (जस्तै 12345678) नराख्नुहोस्। कतै लेखेर सुरक्षित राख्नुहोस्।</li>
+<li><span class="btn">कोड पठाउनुहोस्</span> थिच्नुहोस्।</li>
+<li>इमेल खोल्नुहोस्। <b>"Pocket Hotel कोड"</b> भन्ने इमेल आउँछ। यसमा <b>६ अङ्कको ठुलो कोड</b> हुन्छ।
+  <br><small>इमेल १–२ मिनेटमा नआए <b>Spam / Promotions</b> फोल्डर पनि हेर्नुहोस्।</small></li>
+<li>कोडमा थिचेर कपी गर्नुहोस् र एपमा <b>"इमेलको ६ अङ्कको कोड"</b> भन्ने बाकसमा हाल्नुहोस्।</li>
+<li><span class="btn">होटल बनाउनुहोस्</span> थिच्नुहोस्। तपाईंको होटलको खाता बन्यो।</li>
+</ol>
+<div class="box warn"><b class="t">कोड १० मिनेटसम्म मात्र चल्छ</b>
+ढिला भयो भने फेरि <b>"कोड पठाउनुहोस्"</b> थिच्नुहोस्। एक घण्टामा ५ पटकभन्दा बढी कोड माग्न मिल्दैन। यो कोड कसैलाई नदिनुहोस्।</div>
+
+<h3>तपाईंको "होटल कोड" कहाँ हेर्ने?</h3>
+<p>खाता बनेपछि <span class="tab">स्टाफ</span> ट्याब खोल्नुहोस्। माथि <b>"होटल कोड"</b> (६ अक्षरको, जस्तै <b>RL4PG8</b>) लेखिएको हुन्छ। कर्मचारीले साइन इन गर्दा यही कोड चाहिन्छ। यो कोड कर्मचारीलाई मात्र दिनुहोस्।</p>
+
+<h3>अर्को फोन वा कम्प्युटरमा साइन इन गर्ने तरिका (मालिक)</h3>
+<ol class="steps">
+<li>एप खोलेर <span class="tab">मालिक</span> ट्याबमा <b>Email</b> र <b>पासवर्ड</b> लेख्नुहोस्। <span class="btn">साइन इन</span> थिच्नुहोस्।</li>
+<li>नयाँ फोन/कम्प्युटर भएकाले एपले इमेलको <b>६ अङ्कको कोड</b> माग्छ। इमेलमा आएको कोड हाल्नुहोस्।</li>
+<li><span class="btn">साइन इन</span> फेरि थिच्नुहोस्। तपाईंको सबै डाटा आउँछ।</li>
+</ol>
+
+<h3>पासवर्ड बिर्सनुभयो भने (मालिक)</h3>
+<ol class="steps">
+<li>एप खोलेर <span class="tab">मालिक</span> ट्याबमा जानुहोस्। <span class="btn">साइन इन</span> को तल <span class="btn">पासवर्ड बिर्सनुभयो?</span> थिच्नुहोस्।</li>
+<li>आफ्नो <b>Email</b> लेख्नुहोस्, <span class="btn">कोड पठाउनुहोस्</span> थिच्नुहोस्।</li>
+<li>इमेलमा <b>"Pocket Hotel पासवर्ड कोड"</b> आउँछ। त्यसमा ६ अङ्कको कोड हुन्छ। (Spam फोल्डर पनि हेर्नुहोस्।)</li>
+<li>कोड, <b>नयाँ पासवर्ड</b> (कम्तीमा ८ अक्षर) र फेरि एकपटक नयाँ पासवर्ड लेख्नुहोस्।</li>
+<li><span class="btn">पासवर्ड बदल्नुहोस्</span> थिच्नुहोस्। "पासवर्ड बदलियो ✓" देखिन्छ।</li>
+<li><span class="btn">साइन इन</span> थिचेर नयाँ पासवर्डले साइन इन गर्नुहोस्।</li>
+</ol>
+<div class="box warn"><b class="t">पासवर्ड बदलेपछि के हुन्छ?</b>तपाईं अरू सबै फोन र कम्प्युटरबाट साइन आउट हुनुहुन्छ (सुरक्षाको लागि), त्यसैले हरेक ठाउँमा नयाँ पासवर्डले फेरि साइन इन गर्नुपर्छ। यो कोड तपाईंले नमागेको भए कसैले तपाईंको इमेल प्रयोग गर्न खोजेको हुन सक्छ, कोड कसैलाई नदिनुहोस्। कर्मचारीको PIN यसले बदल्दैन।</div>
+<div class="box tip"><b class="t">कर्मचारीले PIN बिर्सिएमा?</b>कर्मचारीले आफैं बदल्न सक्दैन। मालिकले <span class="tab">स्टाफ</span> ट्याबमा उसको नाम ▼ → <span class="btn">PIN</span> थिचेर नयाँ PIN राखिदिनुहोस्।</div>
+
+<h2 id="s5" class="pb">५. पहिलो पटक के के मिलाउने? (सेटअप सूची)</h2>
+<p>साइन इन गरेपछि <span class="tab">सेटिङ</span> ट्याब खोलेर तलका कामहरू क्रमैसँग गर्नुहोस्। यो एक पटक मात्र गर्नुपर्छ।</p>
+
+<h3>१. होटलको विवरण</h3>
+<p><b>होटल</b> भन्ने भागमा होटलको <b>नाम</b>, <b>ठेगाना</b>, <b>फोन</b> र <b>PAN / VAT नं.</b> लेख्नुहोस्। बिलमा यही देखिन्छ। एउटा बाकस लेखेपछि अर्को बाकस थिच्दा आफैं सुरक्षित हुन्छ।</p>
+
+<h3>२. बिलको नियम (भ्याट र सेवा शुल्क)</h3>
+<p><b>बिल</b> भन्ने भागमा स्विच (खोल्ने/बन्द गर्ने बटन) हरू छन्:</p>
+<table>
+<tr><th style="width:38%">स्विच</th><th>खोलेपछि के हुन्छ</th></tr>
+<tr><td>VAT / ट्याक्स इनभ्वाइस दिने</td><td>बिलमा PAN र भ्याट देखिन्छ, बिल नम्बर <b>INV-0001</b> जस्तो बन्छ। बन्द गरे सादा रसिद बन्छ (<b>RC-0001</b>)।</td></tr>
+<tr><td>सर्भिस चार्ज लिने</td><td>सेवा शुल्क (सामान्यतया १०%) जोडिन्छ।</td></tr>
+<tr><td>मूल्यमा कर समावेश छ</td><td>खोलेको भए कोठा र खानाको मूल्यभित्रै कर पर्छ (बिलको जम्मा रकम परिवर्तन हुँदैन)। बन्द गरे कर माथिबाट थपिन्छ।</td></tr>
+<tr><td>ID फोटो लिने</td><td>पाहुनाको परिचयपत्रको फोटो राख्ने भए मात्र खोल्नुहोस्। पाहुनाको सहमति लिनुहोस्।</td></tr>
+</table>
+<p>भ्याट % र सेवा % को बाकसमा आफ्नो होटलको दर राख्न सकिन्छ। कर नियम तपाईंको लेखापालसँग सोधेर मात्र राख्नुहोस्।</p>
+<div class="box tip"><b class="t">कर बारे जानकारी</b>
+नेपालमा होटल र रेस्टुरेन्टले खानाको मूल्यमै कर समावेश गरेर देखाउनुपर्ने कुरा अदालत र वाणिज्य विभागले भनेको समाचार छ (२०२२)। त्यसैले "मूल्यमा कर समावेश छ" खोलेर राख्नु सामान्यतया ठीक हुन्छ। तर यो पक्का होइन, आफ्नो लेखापालसँग सोध्नुहोस्।</div>
+
+<h3>३. कोठा थप्ने</h3>
+<p><b>कोठा र मूल्य</b> भन्ने भागमा तल <b>"कोठा थप्ने"</b> छ।</p>
+<ol class="steps">
+<li><b>किसिम</b> रोज्नुहोस् (Single, Double, Deluxe, Family, Dorm)।</li>
+<li><b>मूल्य (Rs)</b>, <b>तल्ला</b> र <b>खाट</b> संख्या लेख्नुहोस्।</li>
+<li><b>एउटा कोठा:</b> कोठा नम्बर (जस्तै <b>101</b>) लेखेर <span class="btn">＋</span> थिच्नुहोस्।</li>
+<li><b>धेरै कोठा एकैपटक:</b> "१०१ देखि ११०" जस्तै सुरु र अन्तिम नम्बर लेखेर <span class="btn">＋</span> थिच्नुहोस्। एकैचोटि धेरै कोठा बन्छन्।</li>
+</ol>
+<p><b>गल्ती भएमा:</b> कोठाको नम्बर गलत लेखियो भने त्यसको छेउको <b>🗑</b> थिचेर हटाउन मिल्छ (पुष्टि गर्न सोध्छ)। हटाएको कोठा लुकाइन्छ, पुराना बिल र बुकिङ नष्ट हुँदैन। त्यो कोठामा बुकिङ वा पाहुना छ भने हटाउन मिल्दैन, पहिले रद्द वा चेक-आउट गर्नुहोस्। हटाएको नम्बर फेरि थप्न पनि मिल्छ।</p>
+<p><b>मूल्य बदल्न:</b> कोठाको छेउको मूल्यको बाकसमा नयाँ रकम लेख्नुहोस् (मालिक वा मूल्य बदल्ने अधिकार भएकाले मात्र)। मूल्य कहिले को बदल्यो भन्ने "गतिविधि लग" मा लेखिन्छ।</p>
+<p><b>कोठा बिग्रेको भए:</b> कोठाको छेउको <b>✓</b> थिच्दा <b>✕</b> हुन्छ। त्यो कोठा "बिग्रेको" भएर बुकिङ हुँदैन।</p>
+
+<h3>४. रेस्टुरेन्ट मेनु</h3>
+<p><b>रेस्टुरेन्ट मेनु</b> भन्ने भागमा सुरुमा नमुना परिकार (दाल भात, मःमः आदि) हुन्छन्। ती आफ्नो अनुसार बदल्नुहोस्:</p>
+<ul>
+<li>परिकारको <b>नाम</b> वा <b>रेट</b> बदल्न, त्यहीँ लेख्नुहोस्।</li>
+<li><b>किसिम</b> (जस्तै खाना, पेय) लेख्दा अर्डर गर्ने बेला किसिम अनुसार छुट्टाछुट्टै देखिन्छ।</li>
+<li><b>🗑</b> ले परिकार हटाउँछ।</li>
+<li>तल <b>"नयाँ परिकार"</b> मा नाम, रेट र किसिम लेखेर <span class="btn">＋</span> थिच्नुहोस्।</li>
+</ul>
+
+<h3>५. बुकिङ कहाँबाट आयो? (बुकिङ स्रोत)</h3>
+<p><b>बुकिङ स्रोत</b> मा Phone, Walk-in, WhatsApp, Booking.com हुन्छन्। आफ्नो होटलमा बुकिङ आउने तरिका अनुसार थप्न (जस्तै Agoda, Facebook) वा हटाउन सकिन्छ। बुकिङ लेख्दा यही सूचीबाट रोजिन्छ। यसले कुन तरिकाले कति बुकिङ आयो भन्ने थाहा पाउन सजिलो बनाउँछ।</p>
+<div class="box tip"><b class="t">Booking.com / Agoda को बुकिङ</b>यी साइटबाट आएको बुकिङ आफैं एपमा आउँदैन। रिसेप्सनले हातले "नयाँ बुकिङ" मा लेख्नुपर्छ र स्रोतमा Booking.com रोज्नुपर्छ।</div>
+
+<h3>६. प्रिन्टर</h3>
+<p><b>प्रिन्टर</b> भन्ने भागमा कागजको साइज रोज्नुहोस्। राम्रो कुरा: <b>"प्रिन्टरको आफ्नै कागज (स्वचालित)"</b> रोज्दा प्रिन्टरले आफ्नै कागज अनुसार छाप्छ। साना थर्मल प्रिन्टरको लागि ५८ mm, ठुलोको लागि ८० mm, साधारण प्रिन्टरको लागि A4 वा A5 रोज्न सकिन्छ। <b>"परीक्षण प्रिन्ट"</b> ले नमुना बिल छाप्छ, पहिले त्यही गरेर हेर्नुहोस्।</p>
+
+<h3>७. कर्मचारी थप्ने</h3>
+<p>यो भाग ७ मा छ। तपाईं आफैं मात्र काम गर्ने भए यो छोड्न सकिन्छ।</p>
+
+<div class="box ok"><b class="t">सेटअप सकियो भन्ने कसरी थाहा पाउने?</b>
+(१) होटलको नाम माथि दायाँ देखिन्छ। (२) <span class="tab">कोठा</span> ट्याबमा सबै कोठा देखिन्छन्। (३) <span class="tab">रेस्टुरेन्ट</span> ट्याबमा आफ्नो मेनु देखिन्छ।</div>
+
+<h2 id="s6" class="pb">६. दैनिक काम गर्ने तरिका</h2>
+<p>स्क्रिनको तलतिर ट्याबहरू छन् (फोनमा दायाँतिर सार्दा बाँकी ट्याब देखिन्छन्): <span class="tab">कोठा</span> <span class="tab">नयाँ बुकिङ</span> <span class="tab">बुकिङ सूची</span> <span class="tab">रेस्टुरेन्ट</span> <span class="tab">बिल</span> <span class="tab">पैसा</span> <span class="tab">सफाई</span> <span class="tab">स्टाफ</span> <span class="tab">सेटिङ</span>। कसैलाई केही ट्याब नदेखिन सक्छ, किनभने मालिकले उसलाई सबै अधिकार दिएको हुँदैन।</p>
+
+<h3>माथिको पट्टी (हेडर) मा के के छ?</h3>
+<table>
+<tr><th style="width:30%">के देखिन्छ</th><th>अर्थ</th></tr>
+<tr><td>सानो <b>लोगो</b> (बायाँ)</td><td>पकेट होटलको चिन्ह।</td></tr>
+<tr><td><b>✓</b> को बटन</td><td>सिंकको अवस्था। थिच्दा अहिले सिंक हुन्छ। बटनको मुनि छोटो अक्षरमा "सिंक भयो" (वा "अफलाइन", "सिंकमा समस्या") केही सेकेन्ड देखिन्छ। रातो सानो अङ्क भए त्यति कुरा सर्भरमा पठाउन बाँकी छ।</td></tr>
+<tr><td><b>होटलको नाम</b> (दायाँ)</td><td>नाम लामो भए "…" देखिन्छ। थिच्दा पूरा नाम तल देखिन्छ।</td></tr>
+<tr><td><b>EN</b> वा <b>ने</b></td><td>भाषा बदल्ने बटन। <b>EN</b> थिचे अङ्ग्रेजी, <b>ने</b> थिचे नेपाली। यो भाषा त्यही फोन/कम्प्युटरमा मात्र बदलिन्छ।</td></tr>
+<tr><td><b>⬇</b></td><td>एप इन्स्टल गर्न मिल्ने बेला मात्र देखिन्छ।</td></tr>
+</table>
+
+<h3>क) कोठाको चार्ट हेर्ने (<span class="tab">कोठा</span> ट्याब)</h3>
+<p>यो पहिलो पर्दा हो। यहाँ एक हप्ताका कोठाहरू तालिकामा देखिन्छन्। रङको अर्थ:</p>
+<table>
+<tr><th style="width:30%">रङ / चिन्ह</th><th>अर्थ</th></tr>
+<tr><td>हरियो <b>＋</b></td><td>कोठा खाली छ। थिच्यो भने त्यही मिति र कोठाको नयाँ बुकिङ खुल्छ।</td></tr>
+<tr><td>पहेँलो (पाहुनाको नाम)</td><td>बुकिङ भइसकेको तर पाहुना अझै आएका छैनन्।</td></tr>
+<tr><td>निलो (पाहुनाको नाम)</td><td>पाहुना कोठामा बसिरहेका छन्।</td></tr>
+<tr><td>बैजनी <b>🧹</b> (आजको दिन)</td><td>पाहुना गइसके तर कोठा <b>सफा भएको छैन</b>। यो कोठामा नयाँ पाहुना पठाउनुहुँदैन।</td></tr>
+<tr><td>खैरो <b>·</b></td><td>बितेको दिन। यहाँ नयाँ बुकिङ गर्न मिल्दैन।</td></tr>
+<tr><td>खैरो <b>✕</b></td><td>कोठा बिग्रेको छ।</td></tr>
+</table>
+<p>माथिको <b>‹ आज ›</b> ले अघिल्लो वा अर्को हप्ता देखाउँछ। <b>"मितिमा जानुस्"</b> मा मिति रोजे सिधै त्यो मिति देखिन्छ (धेरै पछिको बुकिङ हेर्न सजिलो)।</p>
+
+<h3>ख) नयाँ बुकिङ लेख्ने (<span class="tab">नयाँ बुकिङ</span> ट्याब)</h3>
+<ol class="steps">
+<li><b>ग्राहकको नाम</b> लेख्नुहोस्। (आवश्यक)</li>
+<li><b>फोन</b> लेख्नुहोस्। (WhatsApp बाट बिल पठाउन काम लाग्छ)</li>
+<li><b>कोठा</b> रोज्नुहोस्। यदि कोठाको नम्बरको छेउमा <b>🧹</b> छ भने कोठा सफा हुन बाँकी छ।</li>
+<li><b>कति रात</b> बस्ने हो लेख्नुहोस्।</li>
+<li><b>आगमन मिति</b> रोज्नुहोस्। <b>आजको वा पछिको मिति</b> मात्र रोज्न मिल्छ। बितिसकेको मिति राख्न खोज्यो भने एपले रोक्छ।</li>
+<li><b>बुकिङ कहाँबाट आयो?</b> रोज्नुहोस्।</li>
+<li><b>अग्रिम (Rs)</b> लिएको भए रकम लेख्नुहोस्। नलिएको भए ० छोड्नुहोस्।</li>
+<li><span class="btn">बुकिङ सेभ गर्नुस्</span> थिच्नुहोस्।</li>
+</ol>
+<div class="box warn"><b class="t">"यो कोठा पहिल्यै बुक छ" भन्यो भने?</b>त्यो कोठा ती मितिमा अर्को पाहुनाको लागि बुक भइसकेको छ। अर्को कोठा वा अर्को मिति रोज्नुहोस्। यसरी एपले एउटै कोठा दुई जनालाई दिनबाट जोगाउँछ।</div>
+
+<h3>ग) बुकिङ सूची हेर्ने र चेक-इन गर्ने (<span class="tab">बुकिङ सूची</span> ट्याब)</h3>
+<p>यहाँ <b>सबै बुकिङ</b> एकै ठाउँमा छन्, भोलि वा हप्तौँ पछिका पनि। माथि चारवटा समूह छन्:</p>
+<table>
+<tr><th style="width:30%">समूह</th><th>के देखाउँछ</th></tr>
+<tr><td><span class="btn">आज आउने</span></td><td>आजको वा बितेको मिति भएका, अझै आइनपुगेका बुकिङ।</td></tr>
+<tr><td><span class="btn">भित्र बसेका</span></td><td>अहिले कोठामा रहेका पाहुना।</td></tr>
+<tr><td><span class="btn">आउने (पछि)</span></td><td>भोलि वा त्यसपछिका बुकिङ।</td></tr>
+<tr><td><span class="btn">पुराना</span></td><td>चेक-आउट भइसकेका, रद्द वा नआएका बुकिङ।</td></tr>
+</table>
+<p>माथिको <b>खोज्नुस्</b> बाकसमा पाहुनाको <b>नाम, फोन, कोठा नम्बर वा बिल नम्बर</b> लेखे सबै बुकिङमा खोज्छ।</p>
+<p>कुनै बुकिङको दायाँको <b>▼</b> थिच्दा त्यसमा गर्न मिल्ने काम देखिन्छन्:</p>
+<ul>
+<li><span class="btn">चेक-इन</span>: पाहुना आएपछि। (आजको वा बितेको मिति भएको बुकिङमा मात्र देखिन्छ)</li>
+<li><span class="btn">आजै आयो (मिति आज सार्ने)</span>: बुकिङ पछिको मितिको छ तर पाहुना आजै आइपुगे भने। मिति आजमा सरेर चेक-इन खुल्छ। (कोठा आजका लागि खाली भए मात्र)</li>
+<li><span class="btn">बदल्ने</span>: नाम, फोन, कोठा, मिति र रात बदल्न।</li>
+<li><span class="btn">रद्द / आएन</span>: पाहुनाले रद्द गरे वा आएनन् भने। कारण लेख्नुहोस्।</li>
+</ul>
+<h3>चेक-इनमा के भर्ने?</h3>
+<ol class="steps">
+<li><b>राष्ट्रियता</b> र <b>कति जना</b> रोज्नुहोस्।</li>
+<li><b>परिचयपत्र / पासपोर्ट नम्बर</b> लेख्नुहोस्।</li>
+<li>विदेशी भए <b>भिसा</b> को विवरण लेख्नुहोस्।</li>
+<li><b>थप खाट</b> चाहिए भने रोज्नुहोस्।</li>
+<li><span class="btn">चेक-इन पूरा</span> थिच्नुहोस्। कोठा निलो हुन्छ।</li>
+</ol>
+<div class="box stop"><b class="t">"यो कोठा अझै सफा भएको छैन" भन्यो भने?</b>
+अघिल्लो पाहुना गएको कोठा सफा भएको छैन भन्ने अर्थ हो। नयाँ पाहुना त्यही कोठामा पठाउनुहुँदैन। सफाई कर्मचारीलाई <span class="tab">सफाई</span> ट्याबबाट "सफा भयो" थिच्न लगाउनुहोस्, अनि चेक-इन गर्नुहोस्।
+आपतकालमा मालिक वा म्यानेजरले <span class="btn">तैपनि चेक-इन गर्ने</span> थिच्न सक्छन्। यो कुरा गतिविधि लगमा लेखिन्छ।</div>
+
+<h3>पाहुना बस्दाबस्दै रात थप्ने</h3>
+<p>पाहुना बढी दिन बस्न चाहे भने <span class="tab">बुकिङ सूची</span> → <span class="btn">भित्र बसेका</span> → उनको नाम ▼ → <span class="btn">बस्ने रात बदल्ने</span>। रात बढाउनुहोस्। त्यो कोठा अर्को पाहुनाले अगाडि बुक गरिसकेको भए एपले रोक्छ।</p>
+
+<h3>घ) रेस्टुरेन्ट अर्डर (<span class="tab">रेस्टुरेन्ट</span> ट्याब)</h3>
+<ol class="steps">
+<li>मेनुबाट परिकार थिच्नुहोस्। थिचेको प्रत्येक पटक १ थपिन्छ।</li>
+<li><b>अर्डर</b> मा भएका परिकार र जम्मा रकम हेर्नुहोस्। गल्ती भए <b>✕</b> ले हटाउनुहोस्।</li>
+<li><b>कोठा / टेबल</b> रोज्नुहोस्: टेबल १, टेबल २, वा बसिरहेका पाहुनाको कोठा।</li>
+<li><span class="btn">भान्छामा पठाउनुस्</span> थिच्नुहोस्।</li>
+<li>भान्छा भागमा "<b>भान्छा स्क्रिन</b>" हेर्नुहोस्। परिकार तयार भएर दिएपछि <span class="btn">सर्भ भयो</span> थिच्नुहोस्।</li>
+</ol>
+<p><b>सर्भ भएपछि पैसा कसरी लिने?</b></p>
+<table>
+<tr><th style="width:36%">अवस्था</th><th>के गर्ने</th></tr>
+<tr><td>कोठाको पाहुनाको अर्डर</td><td><span class="btn">रुम बिलमा थप्ने</span> थिच्नुहोस्। खाना कोठाको बिलमा जोडिन्छ, चेक-आउटमा सँगै तिरिन्छ।</td></tr>
+<tr><td>टेबलमा बसेकाले तिरे</td><td><span class="btn">नगद तिर्यो</span> वा <span class="btn">QR तिर्यो</span> थिच्नुहोस्। रकम "पैसा" ट्याबमा आजको हिसाबमा जोडिन्छ।</td></tr>
+<tr><td>टेबलमा बसेका तर तिरेनन्, होटलकै पाहुना हुन्</td><td>"तिरेन → रुम बिलमा…" बाट पाहुनाको कोठा रोज्नुहोस्। खाना त्यो कोठाको बिलमा जोडिन्छ र चेक-आउटमा तिर्न मिल्छ।</td></tr>
+</table>
+<div class="box tip"><b class="t">अर्डर बिर्सिएमा?</b>चेक-आउट गर्दा <span class="tab">बिल</span> ट्याबमा <b>"रेस्टुरेन्टका बिल बाँकी छन्"</b> भन्ने बाकस आउँछ। त्यहाँ सर्भ भइसकेका तर बिलमा नजोडिएका अर्डर देखिन्छन्। <span class="btn">यो बिलमा थप्ने</span> थिचेर जोड्न सकिन्छ।</div>
+
+<h3>ङ) चेक-आउट र बिल (<span class="tab">बिल</span> ट्याब)</h3>
+<ol class="steps">
+<li>माथिको <b>कोठा</b> बाकसबाट जाने पाहुनाको कोठा रोज्नुहोस्। (बुकिङ सूचीबाट <span class="btn">बिल / चेक-आउट</span> थिच्दा सिधै यहीँ आउँछ)</li>
+<li>कोठाको भाडा, खाना, <b>अरू (लुगा धुलाइ आदि)</b>, सेवा शुल्क र भ्याट देखिन्छ। लुगा धुलाइजस्ता थप खर्च भए "अरू" बाकसमा रकम लेख्नुहोस्।</li>
+<li><b>जम्मा</b>, <b>अग्रिम तिरेको</b> र <b>तिर्न बाँकी</b> जाँच्नुहोस्।</li>
+<li><b>भुक्तानी:</b> <b>नगद</b> र <b>QR / eSewa</b> दुवै बाकसमा रकम लेख्न सकिन्छ (दुई तरिकाले बाँडेर पनि तिर्न मिल्छ)। एपले आफैं तिर्न बाँकी रकम नगदमा राखिदिन्छ। चाहे अनुसार बदल्नुहोस्।</li>
+<li><span class="btn">चेक-आउट गर्नुस्</span> थिच्नुहोस्।</li>
+</ol>
+<div class="box ok"><b class="t">चेक-आउट गरेपछि के हुन्छ?</b>
+(१) बिल नम्बर बन्छ, जस्तै <b>INV-0001</b>। (२) कोठा "सफा गर्नुपर्ने" (🧹) हुन्छ। (३) बिलको झलक आउँछ जहाँबाट प्रिन्ट वा शेयर गर्न मिल्छ।</div>
+<div class="box warn"><b class="t">पूरा नतिरे के हुन्छ?</b>तिर्न बाँकी रकम "उधारो" को रूपमा बिलमा "बाँकी" लेखिन्छ। तर पछि त्यो पैसा तिरेपछि एपमा "तिर्यो" भनेर जोड्ने सुविधा अहिले छैन। बाँकी रकमको हिसाब आफैंले कतै लेखेर राख्नुहोस्।</div>
+
+<h3>च) बिल हेर्ने, पठाउने र प्रिन्ट गर्ने</h3>
+<p>चेक-आउट सकिएपछि (वा <b>"हालका बिल (फेरि प्रिन्ट)"</b> बाट कुनै पुरानो बिलको 🖨 थिचेर) <b>"बिलको झलक"</b> देखिन्छ। जस्तो छाप्ने हो, ठ्याक्कै त्यस्तै। तल यी बटन छन्:</p>
+<table>
+<tr><th style="width:34%">बटन</th><th>के गर्छ</th></tr>
+<tr><td><span class="btn">📤 शेयर (PDF)</span></td><td>फोनको शेयर बाकस खुल्छ। त्यहाँबाट WhatsApp, Viber, Gmail, Drive जहाँ पनि पठाउन सकिन्छ। कम्प्युटरमा PDF सेभ हुन्छ।</td></tr>
+<tr><td><span class="btn">💬 WhatsApp</span></td><td>पाहुनाको फोन नम्बरमा WhatsApp खोलेर बिलको सारांश (कोठा, जम्मा रकम) लेखिदिन्छ। पाहुनाको फोन नम्बर बुकिङमा लेखेको हुनुपर्छ। यसले फाइल (PDF) पठाउँदैन, फाइल पठाउन "शेयर (PDF)" प्रयोग गर्नुहोस्।</td></tr>
+<tr><td><span class="btn">⬇ PDF</span></td><td>बिल PDF फाइलमा सेभ गर्छ।</td></tr>
+<tr><td><span class="btn">✉ इमेल</span></td><td>पाहुनाको इमेलमा बिल पठाउँछ (PDF सहित)। यो बटन तपाईंको होटलमा "इमेल बिल" सुविधा एडमिनले खोलिदिएको छ भने मात्र देखिन्छ।</td></tr>
+<tr><td><span class="btn">🖨 Bluetooth प्रिन्टर जोडेर प्रिन्ट</span></td><td>Bluetooth भएको सानो थर्मल प्रिन्टरमा प्रिन्ट। पहिलो पटक थिच्दा प्रिन्टरको सूची आउँछ, आफ्नो प्रिन्टर रोज्नुहोस्। Chrome मा (Android वा कम्प्युटर) मात्र चल्छ।</td></tr>
+<tr><td><span class="btn">🖨 कुनै पनि प्रिन्टर / PDF</span></td><td>कम्प्युटर वा फोनले चिनेको जुनसुकै प्रिन्टर (USB, Wi-Fi, A4)। प्रिन्ट विन्डो खुल्छ, त्यहाँ प्रिन्टर रोजेर छाप्नुहोस्।</td></tr>
+</table>
+<p>बिलको झलकमाथि <b>"कागजको साइज"</b> बाकस छ। आफ्नो प्रिन्टर अनुसार रोज्नुहोस् (स्वचालित सामान्यतया ठीक हुन्छ)। Bluetooth प्रिन्टर जोडिएपछि त्यसको चौडाइ (५८ वा ८० mm) पनि रोज्न मिल्छ र त्यो प्रिन्टरको लागि सम्झिन्छ।</p>
+<div class="box warn"><b class="t">पुरानो बिल फेरि प्रिन्ट गर्दा</b>"(प्रतिलिपि)" लेखिएर आउँछ, ताकि मूल बिल र नक्कल छुट्टिन्छ। बिलको रकम <b>अहिलेको सेटिङ</b> (भ्याट, सेवा शुल्क) अनुसार फेरि हिसाब हुन्छ, त्यसैले बिल भइसकेपछि सेटिङ नबदल्नुहोस्।</div>
+
+<h3>छ) सफाई (<span class="tab">सफाई</span> ट्याब)</h3>
+<p>चेक-आउट भएका कोठा यहाँ सूचीमा आउँछन्। सफा गरेपछि कोठाको छेउको <span class="btn">सफा भयो</span> थिच्नुहोस्। कोठा फेरि "खाली" हुन्छ र नयाँ पाहुना राख्न मिल्छ।</p>
+<p>यो सूची सफाई कर्मचारीले हेर्छन्। तपाईंको होटलमा सफाई सूची चलाउने मन छैन भने एडमिनलाई भनेर बन्द गर्न लगाउन सकिन्छ। त्यसो गर्दा चेक-आउटपछि कोठा सिधै खाली हुन्छ।</p>
+
+<h3>ज) पैसा (<span class="tab">पैसा</span> ट्याब)</h3>
+<p>आजको दिन कुन तरिकाले (नगद, QR) कति रकम आयो भन्ने जम्मा र हरेक भुक्तानी (को, कुन कोठा, कति) यहाँ देखिन्छ। टेबलमा तिरेको खानाको रकम पनि "टेबल बिक्री" भनेर जोडिन्छ। <span class="btn">बुकिङ डाउनलोड (Excel/CSV)</span> थिचे सबै बुकिङको सूची Excel मा खुल्ने फाइल बन्छ।</p>
+
+<h3>झ) भाषा र सिंक</h3>
+<ul>
+<li>माथिको <b>EN / ने</b> बटनले एपको भाषा नेपाली र अङ्ग्रेजीमा बदल्छ।</li>
+<li>माथिको बटनमा <b>✓</b> देखिए सबै ठीक छ। <b>!</b> देखिए इन्टरनेट वा सर्भरमा समस्या छ (भाग १० हेर्नुहोस्)। घुमिरहेको चिन्ह भए सिंक हुँदैछ।</li>
+</ul>
+
+<h3>ञ) दिनभरिको सजिलो सूची</h3>
+<table>
+<tr><th style="width:26%">कहिले</th><th>के गर्ने</th></tr>
+<tr><td><b>बिहान</b></td><td>✓ हरियो छ कि हेर्नुहोस् · <span class="tab">बुकिङ सूची</span> → <span class="btn">आज आउने</span> मा आज को आउँदैछ हेर्नुहोस् · <span class="tab">सफाई</span> मा बाँकी कोठा हेर्नुहोस्।</td></tr>
+<tr><td><b>पाहुना आउँदा</b></td><td>बुकिङ सूचीबाट चेक-इन · परिचयपत्र लेख्नुहोस्।</td></tr>
+<tr><td><b>खाना खाँदा</b></td><td>रेस्टुरेन्टमा अर्डर → भान्छामा पठाउने → सर्भ भयो → कोठाको बिल वा टेबलमा तिर्यो।</td></tr>
+<tr><td><b>पाहुना जाँदा</b></td><td>बिल ट्याबमा रकम जाँच्ने → तिर्ने तरिका → चेक-आउट → बिल प्रिन्ट वा WhatsApp।</td></tr>
+<tr><td><b>साँझ / राति</b></td><td><span class="tab">पैसा</span> ट्याबमा आजको जम्मा रकमलाई कोषमा भएको पैसासँग मिलाउनुहोस् · ✓ हरियो भएको जाँच्नुहोस् · भोलि आउने पाहुनाको बुकिङ हेर्नुहोस्।</td></tr>
+</table>
+
+<h2 id="s7" class="pb">७. मालिकले गर्ने काम</h2>
+<p>यो भागका काम <b>मालिकले</b> (वा मालिकले अधिकार दिएको व्यक्तिले) मात्र गर्न सक्छ।</p>
+
+<h3>क) कर्मचारी थप्ने (<span class="tab">स्टाफ</span> ट्याब)</h3>
+<ol class="steps">
+<li><span class="tab">स्टाफ</span> ट्याब खोल्नुहोस्। तल <b>"नयाँ स्टाफ"</b> भाग छ।</li>
+<li><b>नाम</b> लेख्नुहोस् (जस्तै सीता)।</li>
+<li><b>लगइन नाम</b> लेख्नुहोस् (साना अङ्ग्रेजी अक्षर वा अङ्क, कम्तीमा ३ अक्षर, जस्तै <b>sita.desk</b>)। स्पेस वा नेपाली अक्षर नराख्नुहोस्।</li>
+<li><b>PIN</b> राख्नुहोस्: <b>६ देखि १० अङ्क</b>, सजिलो नहुने (जस्तै 123456 वा 111111 मिल्दैन)।</li>
+<li><b>भूमिका</b> रोज्नुहोस् (तलको तालिका हेर्नुहोस्)।</li>
+<li><span class="btn">＋</span> थिच्नुहोस्।</li>
+<li>कर्मचारीलाई यी तीन कुरा दिनुहोस्: <b>होटल कोड</b>, <b>लगइन नाम</b>, <b>PIN</b>।</li>
+</ol>
+<div class="box tip"><b class="t">कर्मचारीले कसरी साइन इन गर्ने?</b>कर्मचारीले एप खोलेर <span class="tab">स्टाफ</span> ट्याब थिच्छ, <b>होटल कोड</b>, <b>लगइन नाम</b> र <b>PIN</b> लेखेर <span class="btn">साइन इन</span> थिच्छ। इमेल चाहिँदैन।</div>
+
+<h3>ख) भूमिका र अधिकार तोक्ने</h3>
+<p>कर्मचारीको नामको छेउको <b>▼</b> थिचे अधिकारको सूची आउँछ। हरेक अधिकारको स्विच खोल्ने/बन्द गर्ने गर्न सकिन्छ:</p>
+<table>
+<tr><th style="width:34%">अधिकार</th><th>के गर्न पाउँछ</th></tr>
+<tr><td>कोठा थप्ने/बदल्ने</td><td>कोठा थप्न, हटाउन, बिग्रेको चिन्ह लगाउन।</td></tr>
+<tr><td>मूल्य बदल्ने</td><td>कोठाको मूल्य बदल्न।</td></tr>
+<tr><td>बुकिङ गर्ने</td><td>नयाँ बुकिङ लेख्न र बदल्न।</td></tr>
+<tr><td>बुकिङ रद्द गर्ने</td><td>बुकिङ रद्द गर्न र "आएन" लेख्न।</td></tr>
+<tr><td>चेक-इन</td><td>पाहुनालाई कोठामा राख्न।</td></tr>
+<tr><td>चेक-आउट र बिल</td><td>बिल बनाउन, पैसा लिन, चेक-आउट गर्न।</td></tr>
+<tr><td>छुट दिने</td><td>(भविष्यका लागि) बिलमा छुट दिन।</td></tr>
+<tr><td>रेस्टुरेन्ट अर्डर</td><td>अर्डर लिन र सर्भ गर्न।</td></tr>
+<tr><td>सफाई</td><td>कोठा "सफा भयो" भन्न।</td></tr>
+<tr><td>पैसा हेर्ने</td><td>भुक्तानी र पैसाको हिसाब हेर्न।</td></tr>
+<tr><td>रिपोर्ट र लग</td><td>गतिविधि लग (कसले के गर्यो) हेर्न।</td></tr>
+<tr><td>स्टाफ मिलाउने</td><td>कर्मचारी थप्न र अधिकार दिन।</td></tr>
+<tr><td>होटल सेटिङ</td><td>होटलको विवरण, भ्याट, मेनु, बुकिङ स्रोत बदल्न।</td></tr>
+<tr><td>बन्द बिल फेरि खोल्ने</td><td>चेक-आउट भइसकेको बिल फेरि खोल्न। यो खतरनाक अधिकार हो, मालिकबाहेक अरूलाई नदिनुहोस्।</td></tr>
+</table>
+<p>भूमिकाको नाम (म्यानेजर, रिसेप्सन, सफाई, रेस्टुरेन्ट, अन्य) ले सुरुमा कुन अधिकार हुने भन्ने तोक्छ। त्यसपछि मालिकले चाहेको अधिकार थपघट गर्न सक्छ। <b>कसैले आफूसँग नभएको अधिकार अरूलाई दिन सक्दैन</b>, र मालिकको अधिकार कसैले छुन सक्दैन।</p>
+<table>
+<tr><th>भूमिका</th><th>सुरुमा पाउने अधिकार</th></tr>
+<tr><td>म्यानेजर</td><td>प्रायः सबै (स्टाफ मिलाउने र बन्द बिल खोल्ने बाहेक)</td></tr>
+<tr><td>रिसेप्सन</td><td>बुकिङ, चेक-इन, चेक-आउट र बिल, पैसा हेर्ने</td></tr>
+<tr><td>सफाई</td><td>सफाई मात्र</td></tr>
+<tr><td>रेस्टुरेन्ट</td><td>रेस्टुरेन्ट अर्डर मात्र</td></tr>
+<tr><td>अन्य</td><td>केही पनि छैन। मालिकले चाहेको मात्र खोल्ने।</td></tr>
+</table>
+
+<h3>ग) कर्मचारीको PIN बदल्ने, बन्द गर्ने</h3>
+<ul>
+<li><b>PIN बिर्सेमा:</b> कर्मचारीको नाम ▼ → <span class="btn">PIN</span> थिचेर नयाँ PIN राख्नुहोस्। यसो गर्दा त्यो कर्मचारी अरू सबै फोनबाट साइन आउट हुन्छ।</li>
+<li><b>कर्मचारीले काम छोड्यो:</b> उसको नाम ▼ → <span class="btn">बन्द गर्ने</span> थिच्नुहोस्। उसले तुरुन्तै साइन इन गर्न सक्दैन। पछि फेरि राख्नुपरे <span class="btn">खोल्ने</span>।</li>
+<li>कर्मचारीलाई मेटाउने सुविधा छैन। बन्द गर्दा उसले गरेका कामको इतिहास रहन्छ।</li>
+</ul>
+
+<h3>घ) फोन / कम्प्युटर बन्द गर्ने</h3>
+<p><span class="tab">स्टाफ</span> ट्याबको तल <b>"फोन / कम्प्युटर"</b> भागमा होटलमा साइन इन भएका सबै फोन/कम्प्युटरको सूची छ (नाम र पछिल्लो पटक कहिले चलेको)। फोन हरायो वा कर्मचारीले फोन लिएर गयो भने त्यसको छेउको <span class="btn">बन्द</span> थिच्नुहोस्। त्यो फोन तुरुन्तै साइन आउट हुन्छ र फेरि चल्दैन।</p>
+
+<h3>ङ) लगइन इतिहास (को, कुन फोनबाट, कहिले?)</h3>
+<p><span class="tab">स्टाफ</span> ट्याबमा <b>"लगइन इतिहास"</b> भाग छ। <span class="btn">इतिहास हेर्ने</span> थिच्नुहोस्। यहाँ मालिक र एडमिनले मात्र हेर्न सक्छन्। प्रत्येक लगइनमा देखिन्छ:</p>
+<ul>
+<li>को (इमेल वा लगइन नाम), <b>सफल</b> वा <b>असफल</b> (गलत PIN/पासवर्ड/कोड)।</li>
+<li>कुन किसिमको फोन/कम्प्युटर (Android, Windows आदि) र नयाँ डिभाइस हो कि।</li>
+<li>देश र नेटवर्क ठेगानाको सुरुको भाग (अन्तिम भाग लुकाइएको)।</li>
+<li>मिति र समय।</li>
+</ul>
+<p>यो ३ महिनासम्म रहन्छ। कसैले धेरै पटक असफल प्रयास गरेको देखिए पासवर्ड वा PIN बदल्नुहोस्। PIN वा पासवर्ड यसमा कहिल्यै लेखिँदैन।</p>
+
+<h3>च) "गतिविधि लग" (को कसले के गर्यो)</h3>
+<p><span class="tab">सेटिङ</span> ट्याबको तल <b>"गतिविधि लग"</b> मा <span class="btn">गतिविधि लग</span> थिच्नुहोस्। यहाँ महत्त्वपूर्ण कामहरू लेखिन्छन्:</p>
+<ul><li>बुकिङ रद्द वा "आएन" (कारण सहित)</li><li>कोठाको मूल्य बदलेको, कोठा हटाएको</li><li>चेक-आउट र बिल नम्बर</li><li>कर्मचारी थपेको/बदलेको, फोन बन्द गरेको</li><li>बन्द बिल फेरि खोलेको</li><li>सफा नभएको कोठामा जबरजस्ती चेक-इन गरेको</li><li>बिल इमेलबाट पठाएको</li></ul>
+<p>यसले पैसा हराउने वा बिल लुकाउने जस्ता गडबडी पत्ता लगाउन सहयोग गर्छ। मालिकले हप्तामा एक पटक हेर्नु राम्रो।</p>
+
+<h3>छ) खाता बन्द गर्ने (होटलको सबै डाटा मेटाउने)</h3>
+<p><span class="tab">सेटिङ</span> → <b>खाता</b> → <b>"खाता बन्द गर्ने अनुरोध"</b>:</p>
+<ol class="steps">
+<li>कारण रोज्नुहोस् र चाहे थप लेख्नुहोस्।</li>
+<li>आफ्नो <b>पासवर्ड</b> लेख्नुहोस्।</li>
+<li><span class="btn">अनुरोध पठाउने</span> थिच्नुहोस्।</li>
+</ol>
+<p>तुरुन्तै केही मेटिँदैन। एडमिनले जाँचेर स्वीकृत गरेपछि <b>१४ दिनपछि</b> सर्भरको डाटा मेटिन्छ। त्यसअघि जुनसुकै बेला <b>"रद्द गर्ने"</b> थिचेर अनुरोध फिर्ता लिन सकिन्छ। फोनमा रहेको डाटा मेटिँदैन। मेटाउनु अघि बुकिङ र बिलको सूची Excel मा डाउनलोड गरेर राख्नुहोस्।</p>
+
+<h3>ज) साइन आउट गर्ने</h3>
+<p><span class="tab">सेटिङ</span> → <b>खाता</b> → <span class="btn">साइन आउट</span>। अरू कसैले फोन चलाउन सक्ने भए (जस्तै सबैले साझा फोन चलाउने) काम सकेपछि साइन आउट गर्नुहोस्। साइन आउट गर्दा सर्भरमा नपुगेको कुरा बाँकी भए एपले चेतावनी दिन्छ। त्यस्तो बेला इन्टरनेट भएको ठाउँमा गएर केही बेर पर्खनुहोस्, अनि फेरि साइन आउट गर्नुहोस्।</p>
+
+<h2 id="s8" class="pb">८. कर्मचारीले के हेर्न र गर्न पाउँछन्?</h2>
+<p>मालिकले जति अधिकार दियो, कर्मचारीलाई त्यति ट्याब मात्र देखिन्छ।</p>
+<table>
+<tr><th style="width:28%">ट्याब</th><th>कस्तो अधिकार भए देखिन्छ</th></tr>
+<tr><td>कोठा</td><td>सबैलाई देखिन्छ।</td></tr>
+<tr><td>नयाँ बुकिङ</td><td>"बुकिङ गर्ने" अधिकार।</td></tr>
+<tr><td>बुकिङ सूची</td><td>बुकिङ गर्ने, रद्द गर्ने वा चेक-इन मध्ये कुनै।</td></tr>
+<tr><td>रेस्टुरेन्ट</td><td>"रेस्टुरेन्ट अर्डर" अधिकार (र होटलमा रेस्टुरेन्ट सुविधा खुला हुनुपर्छ)।</td></tr>
+<tr><td>बिल</td><td>"चेक-आउट र बिल" अधिकार।</td></tr>
+<tr><td>पैसा</td><td>"पैसा हेर्ने" अधिकार।</td></tr>
+<tr><td>सफाई</td><td>"सफाई" अधिकार (र सफाई सुविधा खुला हुनुपर्छ)।</td></tr>
+<tr><td>स्टाफ</td><td>"स्टाफ मिलाउने" अधिकार (प्रायः मालिक मात्र)।</td></tr>
+<tr><td>सेटिङ</td><td>सबैलाई देखिन्छ, तर भित्रका भाग अधिकार अनुसार फरक।</td></tr>
+</table>
+<div class="box warn"><b class="t">कसैले अधिकार नभएको काम गर्न खोज्यो भने?</b>सर्भरले त्यो परिवर्तन स्वीकार गर्दैन र उसको फोनमा पनि पुरानै अवस्था फर्काउँछ। यस्तो प्रयास गतिविधि लगमा "refused" लेखिन्छ।</div>
+
+<h2 id="s9">९. सुविधाहरूको व्याख्या</h2>
+<table>
+<tr><th style="width:28%">सुविधा</th><th>के गर्छ र किन काम लाग्छ</th></tr>
+<tr><td><b>इन्टरनेट बिना काम</b></td><td>इन्टरनेट गएको बेला पनि बुकिङ, चेक-इन, बिल सबै चल्छ। इन्टरनेट आएपछि आफैं मिल्छ।</td></tr>
+<tr><td><b>धेरै फोनमा एकै डाटा</b></td><td>रिसेप्सन, म्यानेजर र मालिकको फोनमा एकै जानकारी देखिन्छ।</td></tr>
+<tr><td><b>कोठाको चार्ट</b></td><td>कुन कोठा कहिले खाली छ एकै नजरमा देखिन्छ, मिति रोजेर पछिका महिनाका बुकिङ पनि हेर्न मिल्छ।</td></tr>
+<tr><td><b>दोहोरो बुकिङ रोक्ने</b></td><td>एउटै कोठा एउटै मितिमा दुई जनालाई दिन दिँदैन।</td></tr>
+<tr><td><b>बितेको मितिको बुकिङ रोक्ने</b></td><td>बितिसकेको मितिमा बुकिङ लेख्न दिँदैन।</td></tr>
+<tr><td><b>दुई फोनले एकैपटक एउटै कोठा बुक गरेको चेतावनी</b></td><td>दुई फोन इन्टरनेट बिना एउटै कोठा बुक गरे सिंक हुँदा "एउटै कोठा दुई जनालाई बुक भयो!" भनेर देखाउँछ। पहिले बुक भएकोलाई कोठा रहन्छ, पछिकोलाई अर्को कोठा रोजेर सार्ने बटन आउँछ।</td></tr>
+<tr><td><b>सफा नभएको कोठा देखाउने</b></td><td>चेक-आउटपछि कोठा 🧹 देखिन्छ र सफा नभएसम्म नयाँ पाहुना राख्न दिँदैन।</td></tr>
+<tr><td><b>बुकिङ सूची र खोज</b></td><td>आज आउने, बसेका, पछि आउने र पुराना बुकिङ छुट्टाछुट्टै। नाम, फोन, कोठा, बिल नम्बरले खोज्न मिल्छ।</td></tr>
+<tr><td><b>रेस्टुरेन्ट र भान्छा स्क्रिन</b></td><td>अर्डर लिने, भान्छामा पठाउने, सर्भ भएको चिन्ह लगाउने, कोठाको बिलमा जोड्ने वा टेबलमै तिर्ने।</td></tr>
+<tr><td><b>मेनु आफैं मिलाउने</b></td><td>परिकार, रेट र किसिम मालिकले बदल्न मिल्छ।</td></tr>
+<tr><td><b>बिल र कर</b></td><td>भ्याट र सेवा शुल्कसहित बिल, क्रमशः नम्बर (कहिले नमेटिने)। होटल अनुसार कर नियम मिलाउन मिल्छ।</td></tr>
+<tr><td><b>दुई तरिकाले भुक्तानी</b></td><td>एउटै बिलमा नगद र QR/eSewa बाँडेर तिर्न मिल्छ। अग्रिम पनि जोडिन्छ।</td></tr>
+<tr><td><b>बिलको झलक, शेयर, WhatsApp, PDF, इमेल</b></td><td>बिल हेरेर पाहुनालाई पठाउन मिल्छ।</td></tr>
+<tr><td><b>प्रिन्ट</b></td><td>Bluetooth थर्मल प्रिन्टर र जुनसुकै अरू प्रिन्टर (A4, A5, ५८/८० mm) मा।</td></tr>
+<tr><td><b>सफाई सूची</b></td><td>कुन कोठा सफा गर्नुपर्ने हो, सफाई कर्मचारीले मात्र देख्ने सूची।</td></tr>
+<tr><td><b>कर्मचारी र अधिकार</b></td><td>को के हेर्न र गर्न पाउने भन्ने मालिकले तोक्छ।</td></tr>
+<tr><td><b>गतिविधि लग</b></td><td>रद्द, मूल्य परिवर्तन, कोठा हटाएको जस्ता काम कसले गर्यो भन्ने लेखाजोखा।</td></tr>
+<tr><td><b>लगइन इतिहास</b></td><td>को, कुन फोनबाट, कहिले साइन इन गर्यो (गलत प्रयास पनि)।</td></tr>
+<tr><td><b>बिल मेटिँदैन</b></td><td>बिल एकपटक बनेपछि मेट्न मिल्दैन। मालिकले मात्र बन्द बिल फेरि खोल्न सक्छ र त्यो लगमा लेखिन्छ।</td></tr>
+<tr><td><b>पैसाको हिसाब</b></td><td>आजको भुक्तानी (नगद, QR) र टेबल बिक्री, तथा बुकिङको Excel फाइल।</td></tr>
+<tr><td><b>नेपाली र अङ्ग्रेजी</b></td><td>जुनसुकै बेला EN / ने बटनले बदल्न मिल्छ।</td></tr>
+<tr><td><b>फोन बन्द गर्ने</b></td><td>हराएको वा छोडेर गएको कर्मचारीको फोन टाढैबाट बन्द गर्न मिल्छ।</td></tr>
+<tr><td><b>खाता बन्द गर्ने</b></td><td>मालिकले अनुरोध गरेर होटलको डाटा मेटाउन मिल्छ।</td></tr>
+</table>
+
+<h2 id="s10" class="pb">१०. समस्या आउन सक्ने, किन आउँछ र के गर्ने</h2>
+<p>तलको तालिकामा सबैभन्दा धेरै आउने समस्या छन्। आफ्नो समस्या खोजेर "के गर्ने" भागको कुरा क्रमैसँग गर्नुहोस्।</p>
+
+<table>
+<tr><th style="width:24%">समस्या</th><th style="width:30%">किन आउँछ</th><th>के गर्ने</th></tr>
+<tr><td><b>इमेलमा ६ अङ्कको कोड आएन</b></td><td>इमेल ढिलो हुन सक्छ, Spam फोल्डरमा जान सक्छ, वा इमेल ठेगाना गलत लेखिएको हुन सक्छ।</td><td>२–३ मिनेट पर्खनुहोस्। Spam / Promotions हेर्नुहोस्। इमेल ठेगाना जाँच्नुहोस्। फेरि "कोड पठाउनुहोस्" थिच्नुहोस् (एक घण्टामा ५ पटकसम्म मात्र)।</td></tr>
+<tr><td><b>"कोड गलत वा पुरानो छ"</b></td><td>कोड १० मिनेटमा सकिन्छ। एउटा कोडमा ५ पटकसम्म मात्र प्रयास गर्न मिल्छ। पुरानो कोड लेख्नुभएको हुन सक्छ।</td><td>सबैभन्दा नयाँ इमेलको कोड हेर्नुहोस्। अझै नमिले नयाँ कोड मगाउनुहोस्।</td></tr>
+<tr><td><b>"सर्भरमा इमेल मिलाइएको छैन"</b></td><td>इमेल पठाउने सेवामा समस्या छ।</td><td>केही बेरपछि फेरि प्रयास गर्नुहोस्। नभए एडमिनलाई सम्पर्क गर्नुहोस्।</td></tr>
+<tr><td><b>"धेरै पटक गलत भयो। १५ मिनेट पर्खनुहोस्।"</b></td><td>पासवर्ड वा PIN धेरै पटक गलत लेखिएकाले सुरक्षाको लागि रोकिएको हो। मालिकको पासवर्ड ८ पटक, कर्मचारीको PIN ५ पटक गलत भए रोकिन्छ।</td><td>१५ मिनेट पर्खनुहोस्। कर्मचारीले PIN बिर्सेको हो भने मालिकलाई नयाँ PIN राख्न लगाउनुहोस्।</td></tr>
+<tr><td><b>"विवरण मिलेन। फेरि जाँच्नुहोस्।"</b></td><td>इमेल/पासवर्ड वा होटल कोड/लगइन नाम/PIN गलत लेखिएको छ।</td><td>ठुलो-सानो अक्षर, स्पेस, कोडका अक्षरहरू (जस्तै 0 र O) जाँच्नुहोस्। कर्मचारी भए मालिकसँग होटल कोड र लगइन नाम फेरि सोध्नुहोस्।</td></tr>
+<tr><td><b>पासवर्ड बिर्सियो</b></td><td>(मालिकको) पासवर्ड बिर्सिएको।</td><td>साइन इन पर्दामा <b>"पासवर्ड बिर्सनुभयो?"</b> थिच्नुहोस्, इमेलमा आएको ६ अङ्कको कोडले नयाँ पासवर्ड बनाउनुहोस् (भाग ४ मा चरणहरू छन्)। कर्मचारीले PIN बिर्सिए मालिकले नयाँ PIN राखिदिने।</td></tr>
+<tr><td><b>"मालिकले यो फोन बन्द गरिदिएको छ"</b></td><td>मालिकले यो फोन/कम्प्युटर बन्द गरेको छ।</td><td>मालिकसँग सोध्नुहोस्। उनले नै खोल्न सक्छन् (नयाँ रूपमा फेरि साइन इन गर्नुपर्छ)।</td></tr>
+<tr><td><b>✓ को सट्टा ! देखिन्छ, "अफलाइन" भन्छ</b></td><td>इन्टरनेट गएको छ वा सर्भरसँग जोडिएको छैन।</td><td>आत्तिनुपर्दैन, काम गरिरहनुहोस्, सबै फोनमै सुरक्षित छ। इन्टरनेट (Wi-Fi/डेटा) जाँच्नुहोस्। आएपछि आफैं मिल्छ। ✓ बटन थिचेर पनि प्रयास गर्न सकिन्छ।</td></tr>
+<tr><td><b>"सिंकमा समस्या"</b></td><td>सर्भर अस्थायी रूपमा चलेको छैन, वा कहीँ गल्ती भएको छ।</td><td>केही बेर पर्खनुहोस्, ✓ बटन थिच्नुहोस्। तपाईंको परिवर्तन फोनमा सुरक्षित छ। धेरै घण्टासम्म नमिले एडमिनलाई भन्नुहोस्।</td></tr>
+<tr><td><b>रातो सानो अङ्क (जस्तै ३) देखिन्छ</b></td><td>सर्भरमा पठाउन बाँकी कामको सङ्ख्या हो।</td><td>इन्टरनेट भएको ठाउँमा केही बेर एप खोलेर राख्नुहोस्। अङ्क हराएपछि मात्र साइन आउट वा फोन बदल्नुहोस्।</td></tr>
+<tr><td><b>अर्को फोनमा मैले लेखेको बुकिङ देखिएन</b></td><td>एउटा फोनमा सिंक भएको छैन, वा अर्को फोन इन्टरनेट बिना छ।</td><td>दुवै फोनमा ✓ बटन हेर्नुहोस्, दुवै इन्टरनेटमा राखेर ✓ थिच्नुहोस्।</td></tr>
+<tr><td><b>"एउटै कोठा दुई जनालाई बुक भयो!" (पहेँलो चेतावनी)</b></td><td>दुई फोनले इन्टरनेट बिना एउटै कोठा एउटै मितिमा बुक गरे।</td><td>पहिले बुक भएकोलाई कोठा रहन्छ। चेतावनीमा लेखिएको पछिल्लो बुकिङका लागि <b>"सार्ने कोठा"</b> बाट अर्को कोठा रोजेर <b>OK</b> थिच्नुहोस् र पाहुनालाई फोन गरेर जानकारी दिनुहोस्।</td></tr>
+<tr><td><b>"यो कोठा पहिल्यै बुक छ"</b></td><td>त्यो मितिमा कोठा अर्कोले लिइसकेको छ।</td><td>अर्को कोठा वा मिति रोज्नुहोस्। चार्टमा खाली कोठा हेर्नुहोस्।</td></tr>
+<tr><td><b>"बितिसकेको मितिमा बुकिङ गर्न मिल्दैन"</b></td><td>बितेको मिति रोजिएको छ।</td><td>आजको वा पछिको मिति रोज्नुहोस्। पाहुना पहिले नै आइसकेको थियो भने आजको मितिमा बुकिङ लेखेर चेक-इन गर्नुहोस्।</td></tr>
+<tr><td><b>"यो कोठा अझै सफा भएको छैन"</b></td><td>अघिल्लो पाहुना गएपछि कोठा सफा भएको चिन्ह लागेको छैन।</td><td>सफाई कर्मचारीलाई <span class="tab">सफाई</span> ट्याबमा "सफा भयो" थिच्न लगाउनुहोस्। सफा भइसकेको तर चिन्ह नलगाएको हो भने पनि त्यही गर्नुहोस्।</td></tr>
+<tr><td><b>कोठा हटाउँदा "बुकिङ वा पाहुना छ" भन्छ</b></td><td>त्यो कोठामा आउने वा बसिरहेको पाहुना छ।</td><td>पहिले ती बुकिङ रद्द गर्नुहोस् वा चेक-आउट गर्नुहोस्, त्यसपछि कोठा हटाउनुहोस्।</td></tr>
+<tr><td><b>कुनै ट्याब वा बटन देखिँदैन</b></td><td>मालिकले तपाईंलाई त्यो अधिकार दिएको छैन। वा त्यो सुविधा होटलमा बन्द छ।</td><td>मालिकलाई अधिकार माग्नुहोस्। सुविधा बन्द भएको हो भने एडमिनसँग सोध्नुहोस्।</td></tr>
+<tr><td><b>तपाईंले गरेको परिवर्तन आफैं फर्कियो</b></td><td>तपाईंसँग त्यो काम गर्ने अधिकार थिएन, सर्भरले स्वीकार गरेन।</td><td>मालिकलाई भनेर अधिकार मगाउनुहोस्।</td></tr>
+<tr><td><b>बिल प्रिन्ट हुँदैन (Bluetooth)</b></td><td>प्रिन्टर बन्द छ, टाढा छ, अर्को फोनसँग जोडिएको छ, वा यो प्रिन्टर Bluetooth को "कम शक्ति (LE)" प्रकारको छैन।</td><td>प्रिन्टर खोल्नुहोस्, नजिक राख्नुहोस्, अर्को फोनको Bluetooth बन्द गर्नुहोस्। फेरि थिच्नुहोस्। अझै नभए "कुनै पनि प्रिन्टर / PDF" बाट प्रिन्ट गर्नुहोस्।</td></tr>
+<tr><td><b>iPhone मा Bluetooth प्रिन्ट बटन छैन</b></td><td>iPhone को Safari ले Bluetooth प्रिन्टर चलाउन दिँदैन।</td><td>"कुनै पनि प्रिन्टर / PDF" प्रयोग गर्नुहोस्, वा कम्प्युटर/Android बाट प्रिन्ट गर्नुहोस्।</td></tr>
+<tr><td><b>प्रिन्टमा बिल सानो, ठुलो वा कागजबाट बाहिर गयो</b></td><td>कागजको साइज प्रिन्टरसँग नमिलेको।</td><td>बिलको झलकमाथिको <b>"कागजको साइज"</b> बाट आफ्नो प्रिन्टर अनुसार ५८, ८०, A5 वा A4 रोज्नुहोस्। थाहा नभए "प्रिन्टरको आफ्नै कागज (स्वचालित)" रोज्नुहोस्। सेटिङ → प्रिन्टरमा "परीक्षण प्रिन्ट" गरेर हेर्नुहोस्।</td></tr>
+<tr><td><b>नेपाली अक्षर प्रिन्टमा बिग्रियो</b></td><td>प्रिन्टरमा नेपाली फन्ट छैन।</td><td>एपले बिललाई चित्र बनाएर पठाउँछ, त्यसैले सामान्यतया ठीक हुन्छ। फेरि "परीक्षण प्रिन्ट" गर्नुहोस्। हुँदैन भने PDF बनाएर अर्को प्रिन्टरबाट छाप्नुहोस्।</td></tr>
+<tr><td><b>WhatsApp बटन थिच्दा पाहुनाको नम्बरमा नगएर खाली खुल्यो</b></td><td>बुकिङमा फोन नम्बर लेखिएको छैन वा गलत छ।</td><td>बुकिङ सूचीमा "बदल्ने" बाट फोन नम्बर राख्नुहोस्। नेपाली मोबाइल नम्बर (९८...) आफैं ९७७ सँग जोडिन्छ।</td></tr>
+<tr><td><b>इमेल बटन देखिँदैन</b></td><td>तपाईंको होटलमा "इमेल बिल" सुविधा खोलिएको छैन।</td><td>एडमिनलाई भनेर खोल्न लगाउनुहोस्।</td></tr>
+<tr><td><b>एप पुरानै देखिन्छ, नयाँ सुविधा छैन</b></td><td>फोनले पुरानो संस्करण सम्झेको छ।</td><td>एप पूरै बन्द गरेर फेरि खोल्नुहोस्। ब्राउजरमा भए पृष्ठ पुनः लोड (Refresh) गर्नुहोस्। एकपटक होइन, दुई पटक गर्नुपर्न सक्छ।</td></tr>
+<tr><td><b>फोन बदलेपछि डाटा नदेखिएको</b></td><td>नयाँ फोनमा अझै साइन इन गरेको छैन, वा इन्टरनेट छैन।</td><td>नयाँ फोनमा साइन इन गर्नुहोस् (मालिकले इमेलको कोड हाल्नुपर्छ)। इन्टरनेट भएको बेला केही बेर पर्खनुहोस्, डाटा आफैं आउँछ।</td></tr>
+<tr><td><b>फोन हरायो वा चोरी भयो</b></td><td>—</td><td>तुरुन्तै मालिकले <span class="tab">स्टाफ</span> → "फोन / कम्प्युटर" मा गएर त्यो फोनको <span class="btn">बन्द</span> थिच्नुहोस्। त्यसपछि कर्मचारीको PIN पनि बदल्नुहोस्। मालिकको फोन हराए पासवर्ड पनि बदल्न एडमिनसँग सम्पर्क गर्नुहोस्।</td></tr>
+<tr><td><b>गलत कोठा नम्बर लेखियो</b></td><td>मानवीय भुल।</td><td>बुकिङ नभएको कोठा भए सेटिङमा 🗑 थिचेर हटाउनुहोस्, र ठीक नम्बरले नयाँ थप्नुहोस्। बुकिङ भएको भए बुकिङ सूचीमा "बदल्ने" बाट कोठा सार्नुहोस्।</td></tr>
+<tr><td><b>चेक-आउट गलत भयो</b></td><td>रकम गलत वा गलत कोठा।</td><td>बिल मेट्न मिल्दैन। मालिकले मात्र बन्द बिल फेरि खोल्न सक्छ (यो कुरा लगमा लेखिन्छ)। यस्तो अवस्थामा एडमिनसँग पनि सल्लाह लिनुहोस्।</td></tr>
+</table>
+
+<div class="box tip"><b class="t">सहयोग माग्दा के बताउने?</b>
+(१) कुन ट्याबमा के गर्दा समस्या आयो, (२) स्क्रिनमा देखिएको ठ्याक्कै लेख (फोटो खिचेर), (३) कुन फोन/कम्प्युटर, (४) इन्टरनेट थियो कि थिएन। पासवर्ड, PIN वा इमेलको कोड कसैलाई नदिनुहोस्।</div>
+
+<h2 id="s11">११. के के नगर्ने</h2>
+<div class="box stop">
+<ul>
+<li><b>पासवर्ड, PIN वा इमेलको ६ अङ्कको कोड</b> कसैलाई नदिनुहोस्, एडमिन वा "सपोर्ट" भन्ने मानिसलाई पनि नदिनुहोस्। हामीले कहिल्यै सोध्दैनौं।</li>
+<li><b>मालिकको पासवर्ड कर्मचारीलाई नदिनुहोस्।</b> कर्मचारीको लागि अलग लगइन नाम र PIN बनाउनुहोस्।</li>
+<li>एउटै PIN धेरै कर्मचारीलाई नदिनुहोस्। सजिलो PIN (123456) नराख्नुहोस्।</li>
+<li><b>"परीक्षण मोड" (यही डिभाइसमा मात्र चलाउने) मा असली होटलको काम नगर्नुहोस्।</b> त्यहाँको डाटा सर्भरमा जाँदैन, फोनको डाटा मेटिए सबै हराउँछ। असली होटलको लागि "नयाँ होटल" बाट खाता खोल्नुहोस्।</li>
+<li><b>ब्राउजरको "डाटा मेटाउने" (Clear data / Clear site data)</b> नथिच्नुहोस्, विशेष गरी रातो अङ्क (सिंक बाँकी) देखिएको बेला। सर्भरमा नपुगेको काम हराउन सक्छ।</li>
+<li><b>रातो अङ्क देखिँदै साइन आउट नगर्नुहोस्।</b> पहिले इन्टरनेटमा गएर अङ्क हराउन दिनुहोस्।</li>
+<li>इन्टरनेट बिना दुई फोनबाट एउटै कोठाको चेक-आउट वा एउटै कोठाको बुकिङ नगर्नुहोस्। सकेसम्म एउटै कोठाको कामको लागि एउटै फोन प्रयोग गर्नुहोस्।</li>
+<li>बिल बनिसकेपछि भ्याट वा सेवा शुल्कको सेटिङ नबदल्नुहोस्, पुरानो बिल फेरि छाप्दा रकम फरक पर्न सक्छ।</li>
+<li>सफा नभएको कोठामा "तैपनि चेक-इन" सामान्य अवस्थामा नथिच्नुहोस्।</li>
+<li>सबै कर्मचारीलाई "बन्द बिल फेरि खोल्ने" वा "स्टाफ मिलाउने" अधिकार नदिनुहोस्।</li>
+<li>पाहुनाको परिचयपत्रको फोटो उसको सहमति बिना नराख्नुहोस्। "ID फोटो लिने" सुविधा आवश्यक नभए बन्द नै राख्नुहोस्।</li>
+<li>एउटै कोठाको नाम कर्मचारीलाई थाहा नदिई मूल्य नबदल्नुहोस्। मूल्य बदल्दा लगमा लेखिन्छ।</li>
+<li>यो एपलाई IRD ले स्वीकृत गरेको बिलिङ सफ्टवेयर नठान्नुहोस् (भाग १)।</li>
+</ul></div>
+
+<h2 id="s12">१२. सुरक्षा, गोपनीयता र ध्यान दिनुपर्ने कुरा</h2>
+<ul>
+<li><b>एउटा होटलले अर्को होटलको डाटा देख्दैन।</b> हरेक होटलको डाटा छुट्टै राखिन्छ।</li>
+<li><b>पासवर्ड र PIN</b> एपमा सादा रूपमा राखिँदैन, कोडमा बदलेर (hash) मात्र राखिन्छ। एडमिनले पनि तपाईंको पासवर्ड देख्दैन।</li>
+<li>बिलको रकम, पैसा र भुक्तानी <b>"पैसा हेर्ने" अधिकार नभएकाले</b> देख्दैनन्।</li>
+<li>डाटा इन्टरनेटमा जाँदा सुरक्षित (encrypt) हुन्छ। तर पूरै गोप्य (end-to-end) छैन, अर्थात् सेवा चलाउने व्यक्तिले प्राविधिक रूपमा सर्भरको डाटा पढ्न सक्छ। सहयोग र सुरक्षाको काममा मात्र यसरी हेरिने कुरा गोपनीयता नीतिमा लेखिएको छ।</li>
+<li>लगइनको इतिहास र गतिविधि लग ३ महिनासम्म राखिन्छ।</li>
+<li>पाहुनाको परिचयपत्रको नम्बर संवेदनशील जानकारी हो। आवश्यक भएसम्म मात्र राख्नुहोस् र सहमति लिनुहोस्।</li>
+<li>विदेशी पाहुनाको विवरण (पासपोर्ट, भिसा) सरकारी निकायलाई जनाउनुपर्ने नियम होटलका लागि लागू हुन सक्छ (नेपालमा डिजिटल दर्ता चरणबद्ध रूपमा लागू हुँदैछ भन्ने समाचार छ)। यो एपले आफैं जनाउँदैन, त्यो तपाईंले आफैं गर्नुपर्छ। लागू नियम अध्यागमन विभागसँग सोध्नुहोस्।</li>
+<li>गोपनीयता नीति: <b>https://pocket-hotel.dahal-khani.workers.dev/privacy.html</b></li>
+</ul>
+
+<h2 id="s13">१३. अहिले नभएका सुविधा</h2>
+<p>इमानदारीपूर्वक जानकारी: तलका कुरा अहिले यो एपमा <b>छैनन्</b>। पछि थपिन सक्छन्।</p>
+<ul>
+<li>उधारो (बाँकी) रकम पछि तिर्दा एपमा "तिर्यो" लेख्ने।</li>
+<li>दिन अन्त्यको हिसाब बन्द गर्ने (नगद गनेर मिलाउने) र विस्तृत रिपोर्ट (महिनाको आम्दानी, कर्मचारी अनुसार सङ्कलन)।</li>
+<li>नेपाली मिति (विक्रम संवत) देखाउने। अहिले अङ्ग्रेजी मिति मात्र।</li>
+<li>Booking.com, Agoda जस्ता साइटबाट बुकिङ आफैं आउने।</li>
+<li>भान्छामा छुट्टै प्रिन्ट (किचन स्लिप) पठाउने।</li>
+<li>मौसम अनुसार फरक मूल्य, CP/MAP/AP जस्ता खाना सहितका योजना, एजेन्ट कमिसन।</li>
+<li>पाहुनाले आफैं बुकिङ गर्ने सार्वजनिक लिङ्क।</li>
+<li>सरकारी निकाय (IRD, अध्यागमन) मा आफैं डाटा पठाउने।</li>
+</ul>
+
+<h2 id="s14">१४. शब्दको अर्थ र सम्पर्क</h2>
+<table>
+<tr><th style="width:28%">शब्द</th><th>अर्थ</th></tr>
+<tr><td>चेक-इन</td><td>पाहुना आएर कोठामा बस्न सुरु गर्ने।</td></tr>
+<tr><td>चेक-आउट</td><td>पाहुना बिल तिरेर कोठा छोड्ने।</td></tr>
+<tr><td>सिंक</td><td>फोनको डाटा र सर्भरको डाटा एकै बनाउने। इन्टरनेट आएपछि आफैं हुन्छ।</td></tr>
+<tr><td>अफलाइन</td><td>इन्टरनेट नभएको अवस्था।</td></tr>
+<tr><td>सर्भर</td><td>इन्टरनेटमा रहेको सुरक्षित भण्डार जहाँ सबै फोनको डाटा राखिन्छ।</td></tr>
+<tr><td>ब्राउजर</td><td>इन्टरनेट खोल्ने एप (Chrome, Safari)।</td></tr>
+<tr><td>इन्स्टल</td><td>एपलाई फोन वा कम्प्युटरमा राख्ने।</td></tr>
+<tr><td>साइन इन / साइन आउट</td><td>खाता खोलेर भित्र पस्ने / बाहिर निस्कने।</td></tr>
+<tr><td>होटल कोड</td><td>६ अक्षरको कोड। कर्मचारीले साइन इन गर्दा चाहिन्छ।</td></tr>
+<tr><td>PIN</td><td>कर्मचारीको गोप्य अङ्क (६–१० अङ्कको)।</td></tr>
+<tr><td>अधिकार</td><td>कसले के हेर्न र गर्न पाउने भन्ने अनुमति।</td></tr>
+<tr><td>भ्याट (VAT)</td><td>मूल्य अभिवृद्धि कर (नेपालमा सामान्यतया १३%)।</td></tr>
+<tr><td>सेवा शुल्क</td><td>होटलले लिने सेवाको शुल्क (सामान्यतया १०%)।</td></tr>
+<tr><td>PAN</td><td>स्थायी लेखा नम्बर (कर दर्ताको नम्बर)।</td></tr>
+<tr><td>QR / eSewa</td><td>मोबाइलबाट पैसा तिर्ने तरिका।</td></tr>
+<tr><td>PDF</td><td>सबै फोन र कम्प्युटरमा खुल्ने कागजको फाइल।</td></tr>
+<tr><td>एडमिन</td><td>पकेट होटल सेवा चलाउने व्यक्ति (सहयोग र सुविधा खोल्ने/बन्द गर्ने)।</td></tr>
+</table>
+
+<h3>सम्पर्क र सहयोग</h3>
+<div class="box tip">
+<p>सेवा चलाउनेको नाम: <span class="fill">&nbsp;</span></p>
+<p>फोन / WhatsApp: <span class="fill">&nbsp;</span></p>
+<p>इमेल: <span class="fill">&nbsp;</span></p>
+<p>सहयोग पाइने समय: <span class="fill">&nbsp;</span></p>
+<p>हाम्रो होटल कोड: <span class="fill">&nbsp;</span></p>
+<p>सहयोग माग्दा पासवर्ड, PIN वा इमेलको कोड कहिल्यै नदिनुहोस्।</p>
+</div>
+
+<p style="text-align:center;margin-top:30px;color:var(--mute)"><small>पकेट होटल · प्रयोगकर्ता निर्देशिका · संस्करण १.० · सबै अधिकार सुरक्षित</small></p>
+
+</div>
+</body>
+</html>

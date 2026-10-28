@@ -40,13 +40,13 @@ app.use("*", async (c, next) => {
 });
 
 /* ---------- OTP by email ---------- */
-async function issueOtp(env: Env, email: string, purpose: "signup" | "login") {
+async function issueOtp(env: Env, email: string, purpose: "signup" | "login" | "reset") {
   const now = Date.now();
   const r = await env.DB.prepare("SELECT COUNT(*) AS n FROM otps WHERE email=? AND created_at>?").bind(email, now - 3600_000).first<{ n: number }>();
   if ((r?.n ?? 0) >= 5) return { error: "rate" as const };
   const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, "0");
   await env.DB.prepare("INSERT INTO otps (email,purpose,code_hash,expires,created_at) VALUES (?,?,?,?,?)").bind(email, purpose, await sha256(`${code}:${email}:${env.JWT_SECRET}`), now + 10 * 60_000, now).run();
-  const m = otpEmail(code, env.APP_URL ?? "https://pocket-hotel.dahal-khani.workers.dev");
+  const m = otpEmail(code, env.APP_URL ?? "https://pocket-hotel.dahal-khani.workers.dev", purpose === "reset" ? "reset" : "code");
   const sent = await sendMail(env, email, m.subject, m.text, { html: m.html });
   if (!sent && env.DEV_RETURN_OTP !== "1") {
     await env.DB.prepare("DELETE FROM otps WHERE email=? AND created_at=?").bind(email, now).run();
@@ -104,6 +104,39 @@ app.post("/auth/otp", async (c) => {
   const r = await issueOtp(c.env, email, b.purpose);
   if ("error" in r) return r.error === "mail" ? bad(c, 503, "mail") : bad(c, 429, "rate");
   return c.json({ ok: true, devCode: r.devCode });
+});
+
+/**
+ * Forgot password: a code goes to the owner's email, and the code lets them choose a new password.
+ * The reply never says whether the email has an account. A new password signs the owner out everywhere.
+ */
+app.post("/auth/reset/otp", async (c) => {
+  const b = await body(c);
+  if (!b || !emailOk(b.email)) return bad(c, 400, "invalid");
+  const email = norm(b.email);
+  const u = await c.env.DB.prepare("SELECT id FROM users WHERE email=? AND active=1").bind(email).first();
+  if (!u) return c.json({ ok: true });
+  const r = await issueOtp(c.env, email, "reset");
+  if ("error" in r) return r.error === "mail" ? bad(c, 503, "mail") : bad(c, 429, "rate");
+  return c.json({ ok: true, devCode: r.devCode });
+});
+
+app.post("/auth/reset", async (c) => {
+  const b = await body(c);
+  if (!b || !emailOk(b.email) || typeof b.password !== "string" || b.password.length < 8 || b.password.length > 200) return bad(c, 400, "invalid");
+  const email = norm(b.email);
+  const u = await c.env.DB.prepare("SELECT * FROM users WHERE email=? AND active=1").bind(email).first<any>();
+  // the same answer for an unknown email and for a wrong code
+  if (!u || !(await checkOtp(c.env, email, "reset", b.code))) return bad(c, 401, "bad_code");
+  const salt = randomHex(12);
+  await c.env.DB.batch([
+    c.env.DB.prepare("UPDATE users SET salt=?,hash=? WHERE id=?").bind(salt, await hashPassword(b.password, salt), u.id),
+    c.env.DB.prepare("UPDATE refresh_tokens SET revoked=1 WHERE user_id=?").bind(u.id),
+    c.env.DB.prepare("DELETE FROM login_attempts WHERE key IN (?,?)").bind("owner:" + email, "closure:" + email),
+  ]);
+  await audit(c.env, u.hotel_id, u.id, "password reset", "by email code");
+  await logLogin(c, { hotel: u.hotel_id, user: u.id, who: email, kind: "owner", ok: true, reason: "password reset", device: { id: "", name: "password reset" } });
+  return c.json({ ok: true });
 });
 
 app.post("/auth/signup", async (c) => {

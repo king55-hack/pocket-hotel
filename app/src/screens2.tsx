@@ -35,6 +35,7 @@ export function Login({ L, onLocal, onDone, setLang }: { L: Lang; onLocal: () =>
   const [needCode, setNeedCode] = useState(false);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [forgot, setForgot] = useState(false);
   const up = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
   const dev = device();
 
@@ -78,6 +79,7 @@ export function Login({ L, onLocal, onDone, setLang }: { L: Lang; onLocal: () =>
       <header><b style={{ display: "flex", alignItems: "center", gap: 8 }}><img src="/favicon.png" alt="" width="28" height="28" style={{ borderRadius: 6 }} />Pocket Hotel</b><button className="lang" onClick={setLang}>नेपाली / EN</button></header>
       <main>
         <div className="card" style={{ textAlign: "center" }}><img src="/icon-192.png" alt="Pocket Hotel" width="120" height="120" style={{ borderRadius: 24 }} /></div>
+        {forgot ? <ForgotCard L={L} email0={f.email} onBack={() => setForgot(false)} /> : (
         <div className="card">
           <div>{tab("owner", ne ? "मालिक" : "Owner")}{tab("staff", ne ? "स्टाफ" : "Staff")}{tab("new", ne ? "नयाँ होटल" : "New hotel")}</div>
           {mode === "staff" ? (
@@ -97,7 +99,9 @@ export function Login({ L, onLocal, onDone, setLang }: { L: Lang; onLocal: () =>
           )}
           {msg && <div className="warn" role="alert">{msg}</div>}
           <button className="btn" disabled={busy} onClick={() => void go()}>{mode === "new" && !needCode ? (ne ? "कोड पठाउनुहोस्" : "Send code") : mode === "new" ? (ne ? "होटल बनाउनुहोस्" : "Create hotel") : ne ? "साइन इन" : "Sign in"}</button>
-        </div>
+          {mode === "owner" && <button className="btn alt" onClick={() => { setForgot(true); setMsg(""); }}>{ne ? "पासवर्ड बिर्सनुभयो?" : "Forgot password?"}</button>}
+          {mode === "staff" && <p style={{ fontSize: 14, color: "var(--mute)" }}>{ne ? "PIN बिर्सनुभयो भने मालिकलाई नयाँ PIN राख्न लगाउनुहोस्।" : "Forgot your PIN? Ask the owner to set a new one."}</p>}
+        </div>)}
         <div className="card">
           <p style={{ margin: 0, fontSize: 14, color: "var(--mute)" }}>{ne ? "सर्भर बिना यही डिभाइसमा मात्र चलाउन पनि मिल्छ (डाटा अरू फोनमा जाँदैन)।" : "You can also use it on this device only, without a server (data does not go to other phones)."}</p>
           <button className="btn alt" onClick={onLocal}>{ne ? "यही डिभाइसमा मात्र चलाउने" : "Use on this device only"}</button>
@@ -313,6 +317,62 @@ function LoginHistory({ L }: { L: Lang }) {
       <p style={{ fontSize: 14, color: "var(--mute)" }}>{ne ? "कसले, कुन फोन/कम्प्युटरबाट, कहिले साइन इन गर्यो (गलत प्रयास पनि)। ३ महिनासम्म राखिन्छ।" : "Who signed in, from which phone or computer, and when (wrong tries too). Kept for 3 months."}</p>
       <button className="btn alt" onClick={async () => { const r = await api("/logins"); setRows(r.s === 200 ? r.j.logins : []); }}>{rows ? (ne ? "फेरि लोड" : "Reload") : (ne ? "इतिहास हेर्ने" : "Show history")}</button>
       {rows && <LoginList L={L} rows={rows} />}
+    </div>
+  );
+}
+
+/** The owner forgot the password: a code goes to the email, and the code allows a new password. */
+function ForgotCard({ L, email0, onBack }: { L: Lang; email0: string; onBack: () => void }) {
+  const ne = L === "ne";
+  const [email, setEmail] = useState(email0);
+  const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [msg, setMsg] = useState("");
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function send() {
+    setMsg("");
+    setBusy(true);
+    const r = await publicApi("/auth/reset/otp", { email });
+    setBusy(false);
+    if (r.s !== 200) return setMsg(errMsg(L, r.j?.error));
+    setSent(true);
+    setMsg(ne ? "यो इमेलमा खाता छ भने ६ अंकको कोड पठाइयो। इमेल (Spam पनि) हेर्नुहोस्।" : "If this email has an account, a 6-digit code was sent. Check your email (and Spam).");
+  }
+  async function save() {
+    setMsg("");
+    if (pw.length < 8) return setMsg(ne ? "पासवर्ड कम्तीमा ८ अक्षरको हुनुपर्छ।" : "The password must have at least 8 characters.");
+    if (pw !== pw2) return setMsg(ne ? "दुई पटक लेखेको पासवर्ड मिलेन।" : "The two passwords are not the same.");
+    setBusy(true);
+    const r = await publicApi("/auth/reset", { email, code, password: pw });
+    setBusy(false);
+    if (r.s !== 200) return setMsg(errMsg(L, r.j?.error));
+    setDone(true);
+  }
+  if (done)
+    return (
+      <div className="card"><h2>{ne ? "पासवर्ड बदलियो ✓" : "Password changed ✓"}</h2>
+        <p>{ne ? "अब नयाँ पासवर्डले साइन इन गर्नुहोस्। अरू सबै फोन/कम्प्युटरबाट तपाईं साइन आउट हुनुभयो।" : "Now sign in with the new password. You were signed out of all other phones and computers."}</p>
+        <button className="btn" onClick={onBack}>{ne ? "साइन इन" : "Sign in"}</button></div>
+    );
+  return (
+    <div className="card"><h2>{ne ? "पासवर्ड बिर्सनुभयो?" : "Forgot password?"}</h2>
+      <label htmlFor="fe">Email</label><input id="fe" type="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} />
+      {!sent ? (
+        <button className="btn" disabled={busy} onClick={() => void send()}>{ne ? "कोड पठाउनुहोस्" : "Send code"}</button>
+      ) : (
+        <>
+          <label htmlFor="fc">{ne ? "इमेलको ६ अंकको कोड" : "6-digit code from email"}</label><input id="fc" inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value)} />
+          <label htmlFor="fp">{ne ? "नयाँ पासवर्ड (कम्तीमा ८ अक्षर)" : "New password (at least 8 characters)"}</label><input id="fp" type="password" value={pw} onChange={(e) => setPw(e.target.value)} />
+          <label htmlFor="fq">{ne ? "नयाँ पासवर्ड फेरि लेख्नुहोस्" : "New password again"}</label><input id="fq" type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+          <button className="btn" disabled={busy} onClick={() => void save()}>{ne ? "पासवर्ड बदल्नुहोस्" : "Change password"}</button>
+        </>
+      )}
+      {msg && <div className="warn" role="alert">{msg}</div>}
+      <button className="btn alt" onClick={onBack}>{ne ? "पछाडि" : "Back"}</button>
     </div>
   );
 }
