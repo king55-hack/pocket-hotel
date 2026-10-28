@@ -1,12 +1,15 @@
 import { db, logAudit, uid, ensureHotel } from "./db";
 import { calcBill, sumLines } from "./lib/bill";
 import { findConflict, isActive, paidSum } from "./lib/booking";
+import { todayISO } from "./lib/dates";
 import type { Booking, GuestInfo, Line, OrderPay, Payment } from "./lib/types";
 
-export type Result<T = void> = { ok: true; value: T } | { ok: false; error: "name" | "taken" | "room" | "state" | "amount" | "inuse" | "dates" };
+export type Result<T = void> = { ok: true; value: T } | { ok: false; error: "name" | "taken" | "room" | "state" | "amount" | "inuse" | "dates" | "past" | "dirty" };
 
-export async function createBooking(i: { room: string; from: string; nights: number; guest: string; phone: string; src: string; advance: number }): Promise<Result<Booking>> {
+export async function createBooking(i: { room: string; from: string; nights: number; guest: string; phone: string; src: string; advance: number }, today = todayISO()): Promise<Result<Booking>> {
   const guest = i.guest.trim();
+  if (i.from.length !== 10 || Number.isNaN(Date.parse(i.from + "T00:00:00Z"))) return { ok: false, error: "dates" };
+  if (i.from < today) return { ok: false, error: "past" }; // a booking cannot start on a day that is already over
   const nights = Math.floor(i.nights);
   if (!guest) return { ok: false, error: "name" };
   if (!(nights >= 1) || nights > 365) return { ok: false, error: "amount" };
@@ -24,10 +27,16 @@ export async function createBooking(i: { room: string; from: string; nights: num
   });
 }
 
-export async function checkIn(id: string, info: GuestInfo): Promise<Result> {
-  return db.transaction("rw", db.bookings, async () => {
+export async function checkIn(id: string, info: GuestInfo, o: { force?: boolean } = {}): Promise<Result> {
+  return db.transaction("rw", db.bookings, db.rooms, db.audit, async () => {
     const b = await db.bookings.get(id);
     if (!b || b.status !== "booked") return { ok: false, error: "state" } as const;
+    const r = await db.rooms.get(b.room);
+    // The last guest left but the room has not been cleaned: a new guest must not be put in it.
+    if (r?.st === "clean") {
+      if (!o.force) return { ok: false, error: "dirty" } as const;
+      await logAudit("checked in to an uncleaned room", `${b.guest} room ${b.room}`);
+    }
     await db.bookings.update(id, { status: "occupied", info, updatedAt: Date.now() });
     return { ok: true, value: undefined } as const;
   });
@@ -79,7 +88,8 @@ export async function checkOut(id: string, extra: number, pay: { cash: number; q
     const stillDue = due - cash - qr;
     if (stillDue > 0) payments.push({ id: uid(), method: "credit", amount: stillDue, at: now, kind: "bill" });
     await db.bookings.update(id, { status: "done", extra: e, billNo, payments, updatedAt: now });
-    await db.rooms.update(b.room, { st: "clean" });
+    // With the cleaning list switched off (the admin can do that) the room is ready again at once.
+    await db.rooms.update(b.room, { st: h.feat.housekeeping ? "clean" : "free" });
     await logAudit("checkout", `${billNo} room ${b.room} total ${total} unpaid ${stillDue}`);
     return { ok: true, value: { billNo, due: stillDue } } as const;
   });
@@ -164,6 +174,7 @@ export async function editBooking(id: string, c: { room?: string; from?: string;
     const inHouse = b.status === "occupied";
     const room = inHouse ? b.room : (c.room ?? b.room);
     const from = inHouse ? b.from : (c.from ?? b.from);
+    if (!inHouse && from !== b.from && from < todayISO()) return { ok: false, error: "past" } as const;
     const nights = Math.floor(c.nights ?? b.nights);
     const guest = (c.guest ?? b.guest).trim();
     if (!guest) return { ok: false, error: "name" } as const;

@@ -1,10 +1,14 @@
 import "fake-indexeddb/auto";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { db, ensureHotel } from "../db";
 import { addOrderToBooking, addToRoomBill, cancelBooking, changePrice, checkIn, checkOut, createBooking, editBooking, loadSampleRooms, moveBooking, payOrderAtTable } from "../actions";
 
 const info = { nationality: "Nepali", persons: 1, idNo: "1", visa: "", extraBeds: 0 };
 const mk = (room: string, from = "2026-11-01", nights = 2) => createBooking({ room, from, nights, guest: "Ram", phone: "", src: "Phone", advance: 0 });
+
+// The tests use fixed 2026 dates, so the clock is fixed too (only the date is faked, nothing else).
+vi.useFakeTimers({ toFake: ["Date"] });
+vi.setSystemTime(new Date(2026, 9, 20, 12, 0, 0));
 
 beforeEach(async () => {
   await Promise.all([db.rooms.clear(), db.bookings.clear(), db.orders.clear(), db.hotel.clear(), db.audit.clear()]);
@@ -147,5 +151,50 @@ describe("restaurant money", () => {
     expect((await addOrderToBooking(id, b.value.id)).ok).toBe(false); // not twice
     const r = await checkOut(b.value.id, 0, { cash: 3000, qr: 0 }); // room 2500 + momo 500
     expect(r.ok && r.value.due).toBe(0);
+  });
+});
+
+describe("past dates and rooms that are not clean", () => {
+  it("a booking cannot start on a day that is over; today and later are fine", async () => {
+    const mk2 = (from: string) => createBooking({ room: "101", from, nights: 1, guest: "Ram", phone: "", src: "Phone", advance: 0 });
+    expect(await mk2("2026-10-19")).toEqual({ ok: false, error: "past" }); // the clock is fixed at 2026-10-20
+    expect((await mk2("2026-10-20")).ok).toBe(true);
+    expect((await createBooking({ room: "102", from: "2026-10-21", nights: 1, guest: "S", phone: "", src: "Phone", advance: 0 })).ok).toBe(true);
+    expect(await createBooking({ room: "103", from: "not-a-date", nights: 1, guest: "S", phone: "", src: "Phone", advance: 0 })).toEqual({ ok: false, error: "dates" });
+  });
+  it("a booking cannot be moved into the past", async () => {
+    const b = await createBooking({ room: "101", from: "2026-10-25", nights: 2, guest: "Ram", phone: "", src: "Phone", advance: 0 });
+    if (!b.ok) throw new Error();
+    expect(await editBooking(b.value.id, { from: "2026-10-10" })).toEqual({ ok: false, error: "past" });
+    expect((await editBooking(b.value.id, { from: "2026-10-22" })).ok).toBe(true);
+  });
+  it("after check-out the room waits for cleaning, and nobody can be checked in until it is clean", async () => {
+    const a = await createBooking({ room: "102", from: "2026-10-20", nights: 1, guest: "Out", phone: "", src: "Phone", advance: 0 });
+    if (!a.ok) throw new Error();
+    await checkIn(a.value.id, info);
+    await checkOut(a.value.id, 0, { cash: 2500, qr: 0 });
+    expect((await db.rooms.get("102"))?.st).toBe("clean");
+    const n = await createBooking({ room: "102", from: "2026-10-21", nights: 1, guest: "New", phone: "", src: "Phone", advance: 0 });
+    if (!n.ok) throw new Error();
+    expect(await checkIn(n.value.id, info)).toEqual({ ok: false, error: "dirty" });
+    expect((await db.bookings.get(n.value.id))?.status).toBe("booked");
+    await db.rooms.update("102", { st: "free" }); // the housekeeper marks it clean
+    expect((await checkIn(n.value.id, info)).ok).toBe(true);
+  });
+  it("a manager can check in to an uncleaned room on purpose, and it is written to the log", async () => {
+    await db.rooms.update("103", { st: "clean" });
+    const n = await createBooking({ room: "103", from: "2026-10-20", nights: 1, guest: "Rush", phone: "", src: "Phone", advance: 0 });
+    if (!n.ok) throw new Error();
+    expect((await checkIn(n.value.id, info, { force: true })).ok).toBe(true);
+    expect((await db.audit.toArray()).some((x) => x.action === "checked in to an uncleaned room")).toBe(true);
+  });
+  it("with the cleaning list switched off, the room is ready again right after check-out", async () => {
+    const h = await ensureHotel();
+    await db.hotel.put({ ...h, feat: { ...h.feat, housekeeping: false } });
+    const a = await createBooking({ room: "101", from: "2026-10-20", nights: 1, guest: "X", phone: "", src: "Phone", advance: 0 });
+    if (!a.ok) throw new Error();
+    await checkIn(a.value.id, info);
+    await checkOut(a.value.id, 0, { cash: 2500, qr: 0 });
+    expect((await db.rooms.get("101"))?.st).toBe("free");
   });
 });

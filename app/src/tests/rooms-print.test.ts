@@ -1,9 +1,13 @@
 import "fake-indexeddb/auto";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { addRoom, addRoomRange, createBooking, deleteRoom, loadSampleRooms } from "../actions";
 import { db, ensureHotel, STARTER_MENU } from "../db";
-import { receiptRows, toEscPos } from "../print";
+import { btWidthFor, guessBtWidth, receiptRows, toEscPos, widthPx } from "../print";
 import type { Booking, Hotel } from "../lib/types";
+
+// The tests use fixed 2026 dates, so the clock is fixed too (only the date is faked, nothing else).
+vi.useFakeTimers({ toFake: ["Date"] });
+vi.setSystemTime(new Date(2026, 9, 20, 12, 0, 0));
 
 beforeEach(async () => {
   await Promise.all([db.rooms.clear(), db.bookings.clear(), db.orders.clear(), db.hotel.clear(), db.audit.clear(), db.meta.clear()]);
@@ -89,5 +93,29 @@ describe("printing", () => {
     expect(text).toContain("प्रतिलिपि");
     expect(text).not.toContain("PAN");
     expect(text).not.toMatch(/VAT/);
+  });
+});
+
+describe("printer paper size", () => {
+  it("dots across the paper match the paper", () => {
+    expect([widthPx("58"), widthPx("80"), widthPx("a5"), widthPx("a4"), widthPx("auto")]).toEqual([384, 576, 560, 700, 700]);
+  });
+  it("guesses a Bluetooth printer's width from its name, small (58) when unsure", () => {
+    expect(guessBtWidth("POS-80C")).toBe("80");
+    expect(guessBtWidth("XP-80")).toBe("80");
+    expect(guessBtWidth("RPP300")).toBe("80");
+    expect(guessBtWidth("MHT-P80F")).toBe("80");
+    expect(guessBtWidth("MTP-II")).toBe("58");
+    expect(guessBtWidth("PT-210")).toBe("58");
+    expect(guessBtWidth("Printer001")).toBe("58");
+  });
+  it("a chosen 58 or 80 wins; otherwise what was remembered for that printer, otherwise the guess", () => {
+    const store: Record<string, string> = {};
+    (globalThis as any).localStorage = { getItem: (k: string) => store[k] ?? null, setItem: (k: string, v: string) => { store[k] = v; } };
+    expect(btWidthFor("POS-80C", "58")).toBe("58");
+    expect(btWidthFor("POS-80C", "auto")).toBe("80");
+    store["ph.btw:POS-80C"] = "58";
+    expect(btWidthFor("POS-80C", "auto")).toBe("58");
+    expect(btWidthFor("POS-80C", "80")).toBe("80");
   });
 });

@@ -44,7 +44,7 @@ export async function addStaff(env: TestEnv, ownerTok: string, hotelCode: string
   return { id: a.j.id as string, tok: l.j.access as string, device, pin };
 }
 
-const now = Date.now();
+const now = Date.parse("2026-10-01"); // fixed, so tests with fixed booking dates keep working as time passes
 export const room = (n: string, over: Record<string, unknown> = {}) => ({ n, type: "Double", floor: 1, beds: 2, price: 2500, st: "free", ...over });
 export const booking = (id: string, r: string, from: string, nights = 2, over: Record<string, unknown> = {}) => ({
   id, room: r, from, nights, guest: "Ram", phone: "", src: "Phone", status: "booked", payments: [], food: [], extra: 0, createdAt: now, updatedAt: now, ...over,

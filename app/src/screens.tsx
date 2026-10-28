@@ -20,7 +20,11 @@ export type P = {
 
 const rs = (n: number) => "Rs " + Math.round(n).toLocaleString("en-IN");
 const useT = (L: Lang) => (k: Key) => tr(L, k);
-const errText = (L: Lang, e: string) => (e === "name" ? tr(L, "needName") : e === "taken" ? tr(L, "taken") : L === "ne" ? "यो काम गर्न मिलेन। फेरि जाँच्नुहोस्।" : "Could not do this. Please check and try again.");
+const errText = (L: Lang, e: string) =>
+  e === "name" ? tr(L, "needName")
+    : e === "taken" ? tr(L, "taken")
+    : e === "past" ? (L === "ne" ? "बितिसकेको मितिमा बुकिङ गर्न मिल्दैन। आजको वा पछिको मिति रोज्नुहोस्।" : "You cannot book a day that is already over. Pick today or a later date.")
+    : L === "ne" ? "यो काम गर्न मिलेन। फेरि जाँच्नुहोस्।" : "Could not do this. Please check and try again.";
 
 function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) {
   return <button className={"tg" + (on ? " on" : "")} aria-label={label} aria-pressed={on} onClick={onClick} />;
@@ -78,11 +82,13 @@ export function Chart({ h, L, rooms, bookings, go, setDraft, session }: P) {
           <thead><tr><th />{days.map((d) => <th key={d}>{shortDay(d)}</th>)}</tr></thead>
           <tbody>{rooms.map((r) => (
             <tr key={r.n}>
-              <td className="rn"><b>{r.n}</b> <small>{r.type}</small></td>
+              <td className="rn"><b>{r.n}</b> <small>{r.type}</small>{r.st === "clean" && <span title="needs cleaning"> 🧹</span>}</td>
               {days.map((d) => {
                 if (r.st === "out") return <td key={d} style={{ background: "var(--out)" }}>✕</td>;
                 const b = bookingAt(bookings, r.n, d);
                 if (b) return <td key={d} className={b.status === "occupied" ? "o" : "b"} onClick={() => go(b.status === "occupied" ? "bill" : "stay", b.id)}>{b.guest.split(" ")[0]}</td>;
+                if (d < today) return <td key={d} className="past" aria-label={`${r.n} ${d} past`}>·</td>;
+                if (r.st === "clean" && d === today) return <td key={d} className="cl" aria-label={`${r.n} needs cleaning`} onClick={() => { if (h.feat.housekeeping) go("clean"); }}>🧹</td>;
                 return <td key={d} className="c f" onClick={() => { setDraft({ room: r.n, from: d }); go("book"); }} aria-label={`${r.n} ${d}`}>+</td>;
               })}
             </tr>))}</tbody>
@@ -121,10 +127,10 @@ export function Booking({ h, L, rooms, draft, setDraft, go }: P) {
       <label htmlFor="bg">{t("guestName")}</label><input id="bg" value={guest} onChange={(e) => setGuest(e.target.value)} autoComplete="off" />
       <label htmlFor="bp">{t("phone")}</label><input id="bp" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
       <div className="grid2">
-        <div><label htmlFor="br">{t("room")}</label><select id="br" value={room} onChange={(e) => setRoom(e.target.value)}>{open.map((r) => <option key={r.n}>{r.n}</option>)}</select></div>
+        <div><label htmlFor="br">{t("room")}</label><select id="br" value={room} onChange={(e) => setRoom(e.target.value)}>{open.map((r) => <option key={r.n} value={r.n}>{r.n}{r.st === "clean" ? " 🧹" : ""}</option>)}</select></div>
         <div><label htmlFor="bn">{t("nights")}</label><input id="bn" type="number" min="1" inputMode="numeric" value={nights} onChange={(e) => setNights(e.target.value)} /></div>
       </div>
-      <label htmlFor="bd">{t("arrival")}</label><input id="bd" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+      <label htmlFor="bd">{t("arrival")}</label><input id="bd" type="date" min={todayISO()} value={from} onChange={(e) => setFrom(e.target.value)} />
       <label htmlFor="bs">{t("from")}</label><select id="bs" value={src} onChange={(e) => setSrc(e.target.value)}>{h.sources.map((s) => <option key={s}>{s}</option>)}</select>
       <label htmlFor="ba">{t("advance")}</label><input id="ba" type="number" min="0" inputMode="numeric" value={adv} onChange={(e) => setAdv(e.target.value)} />
       {err && <div className="warn" role="alert">{err}</div>}

@@ -100,9 +100,11 @@ export function PrinterCard({ L }: { L: Lang }) {
     <div className="card"><h2>{t("प्रिन्टर", "Printer")}</h2>
       <label htmlFor="pp">{t("कागजको चौडाइ", "Paper")}</label>
       <select id="pp" value={paper} onChange={(e) => { const v = e.target.value as Paper; setP(v); setPaper(v); }}>
+        <option value="auto">{t("प्रिन्टरको आफ्नै कागज (स्वचालित, सिफारिस)", "Printer's own paper (auto, recommended)")}</option>
         <option value="58">{t("साना थर्मल प्रिन्टर (५८ mm)", "Small thermal printer (58 mm)")}</option>
         <option value="80">{t("ठूला थर्मल प्रिन्टर (८० mm)", "Big thermal printer (80 mm)")}</option>
-        <option value="a4">{t("A4 / A5 (सामान्य प्रिन्टर)", "A4 / A5 (normal printer)")}</option>
+        <option value="a5">A5</option>
+        <option value="a4">A4</option>
       </select>
       <p style={{ fontSize: 14, color: "var(--mute)" }}>{t("Bluetooth प्रिन्टर: Android वा कम्प्युटरको Chrome मा चल्छ। USB/Wi-Fi/A4 प्रिन्टर: 'कुनै पनि प्रिन्टर' बाट छाप्नुस्।", "Bluetooth printer: works in Chrome on Android or a computer. USB, Wi-Fi or A4 printers: use 'Any printer'.")}</p>
       <PrintBar L={L} rows={test} />

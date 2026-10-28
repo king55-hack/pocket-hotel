@@ -10,7 +10,7 @@ type Tr = (ne: string, en: string) => string;
 type Fail = Extract<Result, { ok: false }>;
 const rs = (n: number) => "Rs " + Math.round(n).toLocaleString("en-IN");
 
-export function Bookings({ L, rooms, bookings, sel, go }: P) {
+export function Bookings({ L, rooms, bookings, sel, go, can }: P) {
   const ne = L === "ne";
   const t: Tr = (n, e) => (ne ? n : e);
   const today = todayISO();
@@ -45,6 +45,7 @@ export function Bookings({ L, rooms, bookings, sel, go }: P) {
     r.error === "taken" ? t("यो कोठा ती मितिमा पहिल्यै बुक छ।", "This room is already booked on those dates.")
       : r.error === "name" ? t("नाम लेख्नुहोस्।", "Please write a name.")
       : r.error === "dates" ? t("मिति वा रात ठीक छैन।", "The date or nights are not right.")
+      : r.error === "past" ? t("बितिसकेको मितिमा सार्न मिल्दैन।", "You cannot move a booking to a day that is already over.")
       : t("यो गर्न मिलेन।", "Could not do this.");
 
   return (
@@ -91,7 +92,7 @@ export function Bookings({ L, rooms, bookings, sel, go }: P) {
                     <button className="btn alt" onClick={() => setMode("edit")}>{t("बस्ने रात बदल्ने", "Change nights")}</button>
                   </div>)}
                 {mode === "edit" && <EditForm key={b.id} b={b} rooms={rooms.map((r) => r.n)} t={t} onDone={() => { setMode(""); setMsg(""); }} fail={(r) => setMsg(err(r))} />}
-                {mode === "checkin" && <CheckInForm b={b} t={t} onDone={() => { setMode(""); go("rooms"); }} />}
+                {mode === "checkin" && <CheckInForm b={b} t={t} canForce={can("rooms.manage") || can("housekeeping")} onDone={() => { setMode(""); go("rooms"); }} />}
                 {mode === "cancel" && <CancelForm b={b} t={t} noShowOk={b.from <= today} onDone={() => { setMode(""); setOpen(""); }} />}
                 {msg && <div className="warn" role="alert">{msg}</div>}
               </div>)}
@@ -112,7 +113,7 @@ function EditForm({ b, rooms, t, onDone, fail }: { b: Booking; rooms: string[]; 
       {!inHouse && (
         <div className="grid2">
           <div><label htmlFor="er">{t("कोठा", "Room")}</label><select id="er" value={f.room} onChange={(e) => setF({ ...f, room: e.target.value })}>{rooms.map((r) => <option key={r}>{r}</option>)}</select></div>
-          <div><label htmlFor="ef">{t("आगमन मिति", "Arrival")}</label><input id="ef" type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} /></div>
+          <div><label htmlFor="ef">{t("आगमन मिति", "Arrival")}</label><input id="ef" type="date" min={todayISO()} value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} /></div>
         </div>)}
       <label htmlFor="en">{t("कति रात", "Nights")}</label><input id="en" type="number" min="1" inputMode="numeric" value={f.nights} onChange={(e) => setF({ ...f, nights: e.target.value })} />
       <div className="grid2">
@@ -123,8 +124,10 @@ function EditForm({ b, rooms, t, onDone, fail }: { b: Booking; rooms: string[]; 
   );
 }
 
-function CheckInForm({ b, t, onDone }: { b: Booking; t: Tr; onDone: () => void }) {
+function CheckInForm({ b, t, onDone, canForce }: { b: Booking; t: Tr; onDone: () => void; canForce: boolean }) {
+  const [dirty, setDirty] = useState(false);
   const [f, setF] = useState({ nationality: "Nepali", persons: "1", idNo: "", visa: "", extraBeds: "0" });
+  const info = () => ({ nationality: f.nationality, persons: Math.max(1, Number(f.persons) || 1), idNo: f.idNo.trim(), visa: f.visa.trim(), extraBeds: Number(f.extraBeds) });
   return (
     <div>
       <div className="grid2">
@@ -134,7 +137,10 @@ function CheckInForm({ b, t, onDone }: { b: Booking; t: Tr; onDone: () => void }
       <label htmlFor="idn">{t("परिचयपत्र / पासपोर्ट नम्बर", "ID / passport number")}</label><input id="idn" value={f.idNo} onChange={(e) => setF({ ...f, idNo: e.target.value })} />
       <label htmlFor="vs">{t("भिसा (विदेशी भए)", "Visa (foreigners)")}</label><input id="vs" value={f.visa} onChange={(e) => setF({ ...f, visa: e.target.value })} />
       <label htmlFor="eb">{t("थप खाट", "Extra bed")}</label><select id="eb" value={f.extraBeds} onChange={(e) => setF({ ...f, extraBeds: e.target.value })}><option>0</option><option>1</option><option>2</option></select>
-      <button className="btn" onClick={async () => { await checkIn(b.id, { nationality: f.nationality, persons: Math.max(1, Number(f.persons) || 1), idNo: f.idNo.trim(), visa: f.visa.trim(), extraBeds: Number(f.extraBeds) }); onDone(); }}>{t("चेक-इन पूरा", "Complete check-in")}</button>
+      {dirty && (
+        <div className="warn" role="alert">{t("यो कोठा अझै सफा भएको छैन (अघिल्लो पाहुना गएपछि)। सफाई सकिएपछि मात्र चेक-इन गर्नुस्।", "This room has not been cleaned yet (the last guest has left). Check in only after it is cleaned.")}
+          {canForce && <button className="btn sm bad" onClick={async () => { await checkIn(b.id, info(), { force: true }); onDone(); }}>{t("तैपनि चेक-इन गर्ने", "Check in anyway")}</button>}</div>)}
+      <button className="btn" onClick={async () => { const r = await checkIn(b.id, info()); if (r.ok) onDone(); else if (r.error === "dirty") setDirty(true); }}>{t("चेक-इन पूरा", "Complete check-in")}</button>
     </div>
   );
 }

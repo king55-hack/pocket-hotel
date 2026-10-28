@@ -61,7 +61,7 @@ img{max-width:100%}
   body{background:#fff;padding:0}
   #print-area{display:block !important}
   #print-area img{display:block;margin:0 auto;image-rendering:auto}
-  .paper-58{width:48mm}.paper-80{width:72mm}.paper-a4{width:150mm}
+  .paper-58{width:48mm}.paper-80{width:72mm}.paper-a5{width:125mm}.paper-a4{width:180mm}.paper-auto{width:100%;max-width:180mm}
 }
 
 .lang{min-height:44px;min-width:44px}
@@ -83,3 +83,6 @@ header.top{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-in
 .float-note.name-full{left:auto;right:0;white-space:normal;max-width:min(80vw,320px)}
 .spin{display:inline-block;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+td.cl{background:var(--clean);font-size:18px;cursor:pointer}
+td.past{background:var(--line);color:var(--mute)}

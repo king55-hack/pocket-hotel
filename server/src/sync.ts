@@ -16,6 +16,9 @@ type Row = Record<string, any>;
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
+/** The calendar day (UTC) of a time, shifted by some days. A day of slack covers Nepal being ahead of UTC. */
+const dayOf = (ms: number, shift = 0) => new Date(ms + shift * 86400000).toISOString().slice(0, 10);
+
 function validMenu(m: unknown): boolean {
   if (m === undefined) return true;
   if (!Array.isArray(m) || m.length > 300) return false;
@@ -46,6 +49,9 @@ export function needed(t: string, old: Row | null, nu: Row): { all: Perm[]; any?
     const all: Perm[] = [];
     const any: Perm[] = [];
     if (typeof nu.discount === "number" && nu.discount > 0 && nu.discount !== old?.discount) all.push("discount");
+    // a booking cannot start on a day that was already over when it was made or moved
+    if (!old && typeof nu.createdAt === "number" && nu.from < dayOf(nu.createdAt, -1)) return null;
+    if (old && old.from !== nu.from && old.status === "booked" && nu.status === "booked" && typeof nu.updatedAt === "number" && nu.from < dayOf(nu.updatedAt, -1)) return null;
     if (!old) {
       all.push("booking.create");
       if (nu.status !== "booked") return null; // a booking must start as "booked"

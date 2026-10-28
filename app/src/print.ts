@@ -9,22 +9,42 @@ import type { Booking, Hotel, Room } from "./lib/types";
  *  2. Any printer the computer or phone already knows (USB, Wi-Fi, A4 laser, thermal with a driver) or "Save as PDF",
  *     through the browser's print window.
  */
-export type Paper = "58" | "80" | "a4";
+export type Paper = "auto" | "58" | "80" | "a5" | "a4";
 export type Row = { l: string; r?: string; bold?: boolean; center?: boolean; big?: boolean; rule?: boolean };
 
 const PAPER_KEY = "ph.paper";
 export function getPaper(): Paper {
   try {
     const p = localStorage.getItem(PAPER_KEY);
-    if (p === "58" || p === "80" || p === "a4") return p;
+    if (p === "auto" || p === "58" || p === "80" || p === "a5" || p === "a4") return p;
   } catch { /* ignore */ }
-  return "58";
+  return "auto"; // let the printer's own paper decide
 }
 export function setPaper(p: Paper) {
   try { localStorage.setItem(PAPER_KEY, p); } catch { /* ignore */ }
 }
 /** Dots across the paper. 58 mm printers have 384, 80 mm have 576. */
-export const widthPx = (p: Paper) => (p === "80" ? 576 : p === "a4" ? 700 : 384);
+export const widthPx = (p: Paper) => (p === "80" ? 576 : p === "58" ? 384 : p === "a5" ? 560 : 700);
+
+/**
+ * Width of a Bluetooth thermal printer: 58 or 80. A paper choice of 58/80 wins. Otherwise what was chosen for this
+ * printer before, otherwise a guess from its name (many carry 58 or 80 in the name), otherwise 58 (the common small one).
+ */
+export function guessBtWidth(name: string): "58" | "80" {
+  if (/(^|[^0-9])80([^0-9]|$)|pos-?8|rpp-?3|xp-?80|tm-?t|mht-?p80/i.test(name)) return "80";
+  return "58";
+}
+export function btWidthFor(name: string, paper: Paper = getPaper()): "58" | "80" {
+  if (paper === "58" || paper === "80") return paper;
+  try {
+    const v = localStorage.getItem("ph.btw:" + name);
+    if (v === "58" || v === "80") return v;
+  } catch { /* ignore */ }
+  return guessBtWidth(name);
+}
+export function rememberBtWidth(name: string, w: "58" | "80") {
+  try { localStorage.setItem("ph.btw:" + name, w); } catch { /* ignore */ }
+}
 
 export function drawRows(rows: Row[], w: number, scale = 1): HTMLCanvasElement {
   const k = scale;
@@ -156,8 +176,8 @@ export async function sendBytes(bytes: Uint8Array) {
   }
 }
 
-export async function printBluetooth(rows: Row[], paper: Paper = getPaper()) {
-  const c = drawRows(rows, widthPx(paper === "a4" ? "80" : paper));
+export async function printBluetooth(rows: Row[], width: "58" | "80" = btWidthFor(printerName)) {
+  const c = drawRows(rows, widthPx(width));
   await sendBytes(toEscPos(c.getContext("2d")!.getImageData(0, 0, c.width, c.height)));
 }
 
@@ -180,7 +200,9 @@ export function printSystem(rows: Row[], paper: Paper = getPaper()) {
     st.id = "print-page-style";
     document.head.appendChild(st);
   }
-  st.textContent = `@page{size:${paper === "a4" ? "A4" : paper + "mm auto"};margin:${paper === "a4" ? "14mm" : "2mm"}}`;
+  const thermal = paper === "58" || paper === "80";
+  // auto: no paper size is forced, so the printer's own paper (chosen in the print window) is used
+  st.textContent = `@page{${paper === "a4" ? "size:A4;" : paper === "a5" ? "size:A5;" : thermal ? `size:${paper}mm auto;` : ""}margin:${thermal ? "2mm" : "12mm"}}`;
   const done = () => { area.remove(); window.removeEventListener("afterprint", done); };
   window.addEventListener("afterprint", done);
   // open the print window once the picture is ready (or after two seconds at the latest)

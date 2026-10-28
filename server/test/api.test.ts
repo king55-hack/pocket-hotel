@@ -280,6 +280,29 @@ describe("login history", () => {
   });
 });
 
+describe("bookings in the past", () => {
+  it("a booking cannot start on a day that was already over when it was made", async () => {
+    const env = ENV();
+    const a = await signup(env);
+    const now = Date.now(), day = 86400000;
+    const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+    expect((await push(env, a.tok, { t: "bookings", id: "old", data: booking("old", "101", iso(now - 10 * day), 2, { createdAt: now }) })).j.rejected[0].reason).toBe("invalid");
+    expect((await push(env, a.tok, { t: "bookings", id: "ok", data: booking("ok", "101", iso(now + 3 * day), 2, { createdAt: now }) })).j.accepted).toEqual(["ok"]);
+    // yesterday is allowed (a day of slack for the time difference), and so is a booking made long ago for a date that was then in the future
+    expect((await push(env, a.tok, { t: "bookings", id: "yday", data: booking("yday", "102", iso(now - day), 1, { createdAt: now }) })).j.accepted).toEqual(["yday"]);
+    expect((await push(env, a.tok, { t: "bookings", id: "queued", data: booking("queued", "103", iso(now - 2 * day), 1, { createdAt: now - 5 * day }) })).j.accepted).toEqual(["queued"]);
+  });
+  it("moving a booking into the past is refused", async () => {
+    const env = ENV();
+    const a = await signup(env);
+    const now = Date.now(), day = 86400000;
+    const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+    await push(env, a.tok, { t: "bookings", id: "b", data: booking("b", "101", iso(now + 5 * day), 2, { createdAt: now }) });
+    const moved = await push(env, a.tok, { t: "bookings", id: "b", data: booking("b", "101", iso(now - 20 * day), 2, { createdAt: now, updatedAt: now + 1000 }), ts: now + 1000 });
+    expect(moved.j.rejected[0].reason).toBe("invalid");
+  });
+});
+
 describe("deleting rooms and the menu", () => {
   it("only people who manage rooms can delete one, and a room with a booking cannot be deleted", async () => {
     const env = ENV();
@@ -399,7 +422,7 @@ describe("sync rules", () => {
     const a = await signup(env);
     const p1 = await addStaff(env, a.tok, a.hotel.code, "desk1", "reception");
     const p2 = await addStaff(env, a.tok, a.hotel.code, "desk2", "reception");
-    const t = Date.now();
+    const t = Date.parse("2026-10-01");
     await push(env, p1.tok, { t: "bookings", id: "late", data: booking("late", "101", "2026-11-02", 2, { guest: "Second", createdAt: t + 5000 }) });
     await push(env, p2.tok, { t: "bookings", id: "early", data: booking("early", "101", "2026-11-01", 2, { guest: "First", createdAt: t }) });
     const c = (await call(env, "/sync/conflicts", { token: a.tok })).j.conflicts;
