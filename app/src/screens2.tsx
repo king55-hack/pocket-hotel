@@ -270,11 +270,6 @@ export function AdminPage({ L, setLang }: { L: Lang; setLang: () => void }) {
   );
 }
 
-export function SyncBadge({ L, state, pending }: { L: Lang; state: string; pending: number }) {
-  const t = (k: "Synced" | "Syncing" | "Offline" | "Problem") => ({ Synced: ["Synced", "सिंक भयो"], Syncing: ["Syncing…", "सिंक हुँदै…"], Offline: ["Offline", "अफलाइन"], Problem: ["Sync problem", "सिंकमा समस्या"] })[k][L === "ne" ? 1 : 0];
-  const label = state === "syncing" ? t("Syncing") : state === "offline" ? t("Offline") : state === "error" ? t("Problem") : t("Synced");
-  return <span className="lang" style={{ fontSize: 13 }} role="status">{label}{pending > 0 ? ` · ${pending}` : ""}</span>;
-}
 
 
 /** Shown only in test mode (no server): how to start a real hotel. */

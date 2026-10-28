@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { addOrderToBooking, addToRoomBill, checkOut, createBooking, loadSampleRooms, moveBooking, payOrderAtTable, type Result } from "./actions";
 import { MenuCard, PrinterCard, RoomsCard } from "./settingsCards";
-import { PrintBar } from "./PrintBar";
-import { receiptRows } from "./print";
+import { BillActions } from "./BillActions";
 import { db, STARTER_MENU, uid } from "./db";
 import { calcBill, sumLines } from "./lib/bill";
 import { bookingAt, findConflicts, paidSum } from "./lib/booking";
@@ -183,7 +182,7 @@ export function Food({ h, L, bookings, orders }: P) {
   );
 }
 
-export function BillScreen({ h, L, rooms, bookings, orders, sel }: P) {
+export function BillScreen({ h, L, rooms, bookings, orders, sel, session }: P) {
   const [reprint, setReprint] = useState("");
   const t = useT(L);
   const occ = bookings.filter((b) => b.status === "occupied");
@@ -196,13 +195,12 @@ export function BillScreen({ h, L, rooms, bookings, orders, sel }: P) {
   const b = occ.find((x) => x.id === pick) ?? occ[0];
   const recent = bookings.filter((x) => x.status === "done" && x.billNo).sort((p, q) => q.updatedAt - p.updatedAt).slice(0, 8);
   const waiting = (id: string) => orders.filter((o) => !o.billed && (o.to === "R" + id || o.to.startsWith("T")));
-  const rowsFor = (x: Booking, copy: boolean) => () => receiptRows(h, x, rooms.find((r) => r.n === x.room), L, { copy });
   const finished = done ? bookings.find((x) => x.id === done.id) : undefined;
   if (done)
     return (
       <div className="card"><h2>{t("bill")} {done.billNo} ✓</h2>
         {done.due > 0 && <div className="warn">{t("due")}: {rs(done.due)}</div>}
-        {finished && <PrintBar L={L} rows={rowsFor(finished, false)} />}
+        {finished && <BillActions L={L} h={h} b={finished} room={rooms.find((r) => r.n === finished.room)} session={session} copy={false} />}
         <button className="btn alt" onClick={() => setDone(null)}>OK</button></div>
     );
   const recentCard = recent.length > 0 && (
@@ -210,7 +208,7 @@ export function BillScreen({ h, L, rooms, bookings, orders, sel }: P) {
       {recent.map((x) => (
         <div key={x.id}>
           <div className="item"><span><b>{x.billNo}</b> · {x.room} {x.guest}</span><button className="btn sm alt" onClick={() => setReprint(reprint === x.id ? "" : x.id)}>🖨</button></div>
-          {reprint === x.id && <PrintBar L={L} rows={rowsFor(x, true)} />}
+          {reprint === x.id && <BillActions L={L} h={h} b={x} room={rooms.find((r) => r.n === x.room)} session={session} copy />}
         </div>))}
     </div>
   );

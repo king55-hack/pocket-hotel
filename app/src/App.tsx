@@ -5,7 +5,8 @@ import { db, ensureHotel, setLang } from "./db";
 import { tr, type Key, type Lang } from "./i18n";
 import { BillScreen, Booking as BookingScreen, Chart, Clean, Food, Money, SettingsScreen, type P, type Tab } from "./screens";
 import { Bookings } from "./bookingsScreen";
-import { AdminPage, Login, StaffScreen, SyncBadge } from "./screens2";
+import { Header } from "./header";
+import { AdminPage, Login, StaffScreen } from "./screens2";
 import { countPending, getSyncState, onSync, startAutoSync, syncNow } from "./sync";
 
 type BIPEvent = Event & { prompt: () => Promise<void> };
@@ -78,15 +79,7 @@ function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onO
 
   return (
     <>
-      <header>
-        <b style={{ display: "flex", alignItems: "center", gap: 8 }}><img src="/favicon.png" alt="" width="28" height="28" style={{ borderRadius: 6 }} />{hotel.name}</b>
-        <span>
-          {session && <SyncBadge L={L} state={sync.status} pending={pending} />}{" "}
-          {session && <button className="lang" aria-label="sync now" onClick={() => void syncNow()}>⟳</button>}{" "}
-          {installEv && <button className="lang" onClick={() => void installEv.prompt()}>{t("install")}</button>}{" "}
-          <button className="lang" onClick={() => void setLang(L === "ne" ? "en" : "ne")}>नेपाली / EN</button>
-        </span>
-      </header>
+      <Header name={hotel.name} L={L} signedIn={!!session} sync={sync} pending={pending} canInstall={!!installEv} onInstall={() => void installEv?.prompt()} onSync={() => void syncNow()} onLang={() => void setLang(L === "ne" ? "en" : "ne")} />
       <main>
         {!session && cur !== "set" && (
           <div className="note" role="status">{L === "ne" ? "परीक्षण मोड: डाटा यही डिभाइसमा मात्र छ।" : "Test mode: data stays on this device only."}{" "}

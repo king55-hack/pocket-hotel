@@ -67,3 +67,19 @@ img{max-width:100%}
 .lang{min-height:44px;min-width:44px}
 .tg{width:56px;height:32px}.tg::after{width:26px;height:26px}.tg.on::after{left:27px}
 .chip{padding:2px 4px 2px 12px}.chip button{min-width:40px;min-height:40px;font-size:18px}
+
+/* header: one tidy row, safe for the iPhone notch */
+header.top{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 8px) calc(env(safe-area-inset-right,0px) + 12px) 8px calc(env(safe-area-inset-left,0px) + 12px);min-height:56px;flex-wrap:nowrap}
+.top-logo{border-radius:8px;flex:none}
+.top-gap{flex:1 1 0;min-width:4px}
+.top-sync,.top-name-wrap{position:relative;display:inline-flex;flex:none}
+.top-name-wrap{flex:0 1 auto;min-width:0;max-width:55%}
+.top-btn{position:relative;flex:none;min-width:44px;min-height:44px;border:0;border-radius:12px;background:#ffffff26;color:#fff;font-size:19px;font-weight:700;line-height:1;padding:0 10px}
+.top-btn.lang-btn{font-size:15px}
+.top-btn.st-offline{background:#f59e0b66}.top-btn.st-error{background:#ef444499}
+.top-name{border:0;background:none;color:#fff;font-weight:700;font-size:17px;text-align:right;min-height:44px;padding:0 4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{position:absolute;top:2px;right:2px;min-width:18px;height:18px;border-radius:9px;background:#ef4444;color:#fff;font-size:12px;line-height:18px;text-align:center;padding:0 4px}
+.float-note{position:absolute;top:calc(100% + 4px);left:0;z-index:20;background:#111c;color:#fff;font-size:14px;line-height:1.3;padding:5px 10px;border-radius:10px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px #0004;max-width:80vw;overflow:hidden;text-overflow:ellipsis}
+.float-note.name-full{left:auto;right:0;white-space:normal;max-width:min(80vw,320px)}
+.spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}

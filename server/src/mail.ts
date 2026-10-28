@@ -15,6 +15,8 @@ export interface Env {
   DEV_RETURN_OTP?: string
   /** Public address of the web app, used for links inside emails. */
   APP_URL?: string
+  /** How many bills one hotel may email per day. */
+  MAIL_DAILY_LIMIT?: string
 }
 
 export interface MailOpts { attachments?: { filename: string; content: string }[]; replyTo?: string; html?: string }

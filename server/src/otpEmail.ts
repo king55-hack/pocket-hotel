@@ -57,3 +57,4 @@ export function otpEmail(code: string, appUrl: string) {
 </body></html>`;
   return { subject, text, html };
 }
+

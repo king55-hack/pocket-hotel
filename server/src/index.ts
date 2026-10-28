@@ -9,6 +9,7 @@ import { audit, bad, body, logLogin, need, type App } from "./util";
 import { sync } from "./sync";
 import { staff } from "./staff";
 import { account } from "./account";
+import { send } from "./send";
 import { admin, runDueDeletions } from "./admin";
 
 const app = new Hono<App>();
@@ -210,7 +211,7 @@ async function auth(c: Context<App>, next: () => Promise<void>) {
   c.set("dev", p.dev);
   await next();
 }
-for (const p of ["/me", "/staff", "/staff/*", "/devices", "/devices/*", "/audit", "/logins", "/sync/*", "/account/*", "/auth/logout"]) app.use(p, auth);
+for (const p of ["/me", "/staff", "/staff/*", "/devices", "/devices/*", "/audit", "/logins", "/send/*", "/sync/*", "/account/*", "/auth/logout"]) app.use(p, auth);
 
 
 app.post("/auth/logout", async (c) => {
@@ -254,6 +255,7 @@ app.get("/audit", async (c) => {
 app.route("/sync", sync);
 app.route("/staff", staff);
 app.route("/account", account);
+app.route("/send", send);
 app.route("/admin", admin);
 
 app.notFound((c) => c.json({ error: "not_found" }, 404));

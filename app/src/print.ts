@@ -32,33 +32,61 @@ export function drawRows(rows: Row[], w: number, scale = 1): HTMLCanvasElement {
   const lh = size + 8 * k;
   const c = document.createElement("canvas");
   const ctx = c.getContext("2d")!;
-  c.width = Math.round(w * k);
-  c.height = Math.round(rows.reduce((a, r) => a + (r.rule ? 12 * k : r.big ? lh + 10 * k : lh), 12 * k));
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, c.width, c.height);
-  ctx.fillStyle = "#000";
-  ctx.textBaseline = "top";
-  let y = 4 * k;
-  for (const r of rows) {
-    if (r.rule) {
-      ctx.fillRect(0, y + 5 * k, c.width, 2 * k);
-      y += 12 * k;
-      continue;
-    }
-    const px = r.big ? size + 6 * k : size;
-    ctx.font = `${r.bold || r.big ? "700 " : ""}${px}px "Noto Sans Devanagari", "Nirmala UI", system-ui, sans-serif`;
-    if (r.center) {
-      ctx.textAlign = "center";
-      ctx.fillText(r.l, c.width / 2, y, c.width - 4 * k);
-    } else {
-      ctx.textAlign = "left";
-      ctx.fillText(r.l, 2 * k, y, r.r ? c.width - 150 * k : c.width - 4 * k);
-      if (r.r) {
-        ctx.textAlign = "right";
-        ctx.fillText(r.r, c.width - 2 * k, y);
+  const font = (r: Row) => `${r.bold || r.big ? "700 " : ""}${r.big ? size + 6 * k : size}px "Noto Sans Devanagari", "Nirmala UI", system-ui, sans-serif`;
+  const full = Math.round(w * k);
+
+  // Long text is wrapped onto more lines instead of being squeezed.
+  const wrap = (text: string, maxW: number): string[] => {
+    const out: string[] = [];
+    let line = "";
+    const put = (word: string) => {
+      const t = line ? line + " " + word : word;
+      if (ctx.measureText(t).width <= maxW || !line) line = t;
+      else { out.push(line); line = word; }
+    };
+    for (const word of text.split(" ")) {
+      if (ctx.measureText(word).width <= maxW) { put(word); continue; }
+      for (const ch of word) { // a single very long word: break it
+        if (ctx.measureText(line + ch).width > maxW && line) { out.push(line); line = ""; }
+        line += ch;
       }
     }
-    y += r.big ? lh + 10 * k : lh;
+    if (line) out.push(line);
+    return out.length ? out : [""];
+  };
+
+  const laid = rows.map((r) => {
+    if (r.rule) return { r, lines: [] as string[], h: 12 * k };
+    ctx.font = font(r);
+    const maxW = r.center ? full - 4 * k : r.r ? full - 4 * k - ctx.measureText(r.r).width - 12 * k : full - 4 * k;
+    const lines = wrap(r.l, Math.max(maxW, 40 * k));
+    return { r, lines, h: lines.length * lh + (r.big ? 10 * k : 0) };
+  });
+  c.width = full;
+  c.height = Math.round(laid.reduce((s, x) => s + x.h, 12 * k));
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#fff";
+  g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = "#000";
+  g.textBaseline = "top";
+  let y = 4 * k;
+  for (const { r, lines, h } of laid) {
+    if (r.rule) {
+      g.fillRect(0, y + 5 * k, c.width, 2 * k);
+      y += h;
+      continue;
+    }
+    g.font = font(r);
+    lines.forEach((ln, i) => {
+      const yy = y + i * lh;
+      if (r.center) { g.textAlign = "center"; g.fillText(ln, c.width / 2, yy); }
+      else {
+        g.textAlign = "left";
+        g.fillText(ln, 2 * k, yy);
+        if (r.r && i === 0) { g.textAlign = "right"; g.fillText(r.r, c.width - 2 * k, yy); }
+      }
+    });
+    y += h;
   }
   return c;
 }
@@ -165,6 +193,13 @@ export function printSystem(rows: Row[], paper: Paper = getPaper()) {
 }
 
 /* ---------- what is on the bill ---------- */
+/** The three numbers people ask about: total, money received, still due. */
+export function billTotals(h: Hotel, b: Booking, room: Room | undefined) {
+  const total = calcBill((room?.price ?? 0) * b.nights + sumLines(b.food) + b.extra, h.bill).total;
+  const paid = b.payments.reduce((a, x) => a + (x.method === "credit" ? 0 : x.kind === "refund" ? -x.amount : x.amount), 0);
+  return { total, paid, due: Math.max(0, total - paid) };
+}
+
 export function receiptRows(h: Hotel, b: Booking, room: Room | undefined, L: "ne" | "en", opts: { copy?: boolean } = {}): Row[] {
   const t = (ne: string, en: string) => (L === "ne" ? ne : en);
   const rs = (n: number) => "Rs " + Math.round(n).toLocaleString("en-IN");
