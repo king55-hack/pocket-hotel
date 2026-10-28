@@ -42,7 +42,10 @@ export function Login({ L, onLocal, onDone, setLang }: { L: Lang; onLocal: () =>
     if (r.s === 200) {
       try {
         const prev = localStorage.getItem("ph.last");
-        if (prev && prev !== r.j.user.id) await wipeAll(); // a different person on this device: start clean
+        const keep = localStorage.getItem("ph.keep") === "1"; // chosen in Settings when leaving test mode
+        // A different person (or the test hotel) on this device: start clean, so nothing of it is sent to the new hotel.
+        if (prev !== r.j.user.id && !keep) await wipeAll();
+        localStorage.removeItem("ph.keep");
         localStorage.setItem("ph.last", r.j.user.id);
       } catch { /* ignore */ }
       await setMeta("hotelId", r.j.hotel.id);
@@ -72,8 +75,9 @@ export function Login({ L, onLocal, onDone, setLang }: { L: Lang; onLocal: () =>
   const tab = (m: typeof mode, label: string) => <button className={"btn sm " + (mode === m ? "" : "alt")} onClick={() => { setMode(m); setNeedCode(false); setMsg(""); }}>{label}</button>;
   return (
     <>
-      <header><b>Pocket Hotel</b><button className="lang" onClick={setLang}>नेपाली / EN</button></header>
+      <header><b style={{ display: "flex", alignItems: "center", gap: 8 }}><img src="/favicon.png" alt="" width="28" height="28" style={{ borderRadius: 6 }} />Pocket Hotel</b><button className="lang" onClick={setLang}>नेपाली / EN</button></header>
       <main>
+        <div className="card" style={{ textAlign: "center" }}><img src="/icon-192.png" alt="Pocket Hotel" width="120" height="120" style={{ borderRadius: 24 }} /></div>
         <div className="card">
           <div>{tab("owner", ne ? "मालिक" : "Owner")}{tab("staff", ne ? "स्टाफ" : "Staff")}{tab("new", ne ? "नयाँ होटल" : "New hotel")}</div>
           {mode === "staff" ? (
@@ -159,6 +163,7 @@ export function StaffScreen({ L, session }: { L: Lang; session: Session }) {
         {msg && <div className="warn" role="alert">{msg}</div>}
         <button className="btn" onClick={() => void add()}>＋</button>
       </div>
+      {session.user.role === "owner" && <LoginHistory L={L} />}
       <div className="card"><h2>{ne ? "फोन / कम्प्युटर" : "Phones and computers"}</h2>
         {devs.map((d) => <div className="item" key={d.id}><span>{d.name} · {d.user ?? "-"}<br /><small>{new Date(d.last_seen).toLocaleString()}</small></span>
           {d.revoked ? <span className="pill s-out">off</span> : <button className="btn sm bad" onClick={async () => { await api(`/devices/${d.id}/revoke`, "POST", {}); void load(); }}>{ne ? "बन्द" : "Switch off"}</button>}</div>)}
@@ -220,6 +225,7 @@ export function AdminPage({ L, setLang }: { L: Lang; setLang: () => void }) {
   const [hotels, setHotels] = useState<any[]>([]);
   const [reqs, setReqs] = useState<any[]>([]);
   const [q, setQ] = useState("");
+  const [logins, setLogins] = useState<{ id: string; rows: LoginRow[] } | null>(null);
   async function load(k = key) {
     const s = await adminApi(k, "/stats");
     if (s.s !== 200) { setOk(false); return setMsg(s.s === 429 ? errMsg(L, "locked") : s.s === 0 ? errMsg(L, "offline") : ne ? "कुञ्जी मिलेन।" : "Wrong key."); }
@@ -244,6 +250,8 @@ export function AdminPage({ L, setLang }: { L: Lang; setLang: () => void }) {
           {hotels.map((h) => (
             <div key={h.id} style={{ borderTop: "1px solid var(--line)", marginTop: 8 }}>
               <p><b>{h.name}</b> <small>{h.email} · {h.code} · staff {h.staff} · devices {h.devices} · records {h.records}</small></p>
+              <button className="btn sm alt" onClick={async () => { const r = await adminApi(key, `/hotels/${h.id}/logins`); setLogins({ id: h.id, rows: r.j.logins ?? [] }); }}>{ne ? "लगइन इतिहास" : "Login history"}</button>
+              {logins && logins.id === h.id && <LoginList L={L} rows={logins.rows} />}
               {FEATS.map(([k, en, np]) => <div className="sw" key={k}><div>{ne ? np : en}</div><button className={"tg" + (h.feat[k] ? " on" : "")} aria-label={h.name + " " + k} onClick={() => void toggle(h, k)} /></div>)}
             </div>))}
         </div>
@@ -268,3 +276,48 @@ export function SyncBadge({ L, state, pending }: { L: Lang; state: string; pendi
   return <span className="lang" style={{ fontSize: 13 }} role="status">{label}{pending > 0 ? ` · ${pending}` : ""}</span>;
 }
 
+
+/** Shown only in test mode (no server): how to start a real hotel. */
+export function LocalCard({ L, onOut }: { L: Lang; onOut: () => void }) {
+  const ne = L === "ne";
+  const go = (keep: boolean) => {
+    try { localStorage.setItem("ph.keep", keep ? "1" : "0"); } catch { /* ignore */ }
+    onOut();
+  };
+  return (
+    <div className="card"><h2>{ne ? "असली होटल दर्ता गर्नुस्" : "Start your real hotel"}</h2>
+      <p>{ne ? "अहिले तपाईं यही डिभाइसमा मात्र चलाइरहनुभएको छ (परीक्षण, \"My Hotel\")। असली होटल दर्ता गरेपछि डाटा सर्भरमा सुरक्षित हुन्छ, र अरू फोन/कम्प्युटरमा पनि चल्छ।" : "You are using this device only (test mode, \"My Hotel\"). When you register a real hotel, its data is kept safe on the server and works on other phones and computers too."}</p>
+      <button className="btn" onClick={() => go(false)}>{ne ? "नयाँ होटल दर्ता / साइन इन (यहाँको नमुना डाटा मेटिन्छ)" : "Register a new hotel / sign in (test data here is deleted)"}</button>
+      <button className="btn alt" onClick={() => go(true)}>{ne ? "यहाँको डाटा राखेर दर्ता गर्ने" : "Register and keep the data from here"}</button>
+    </div>
+  );
+}
+
+type LoginRow = { id: number; who: string; kind: string; ok: number; reason: string | null; device_name: string | null; ip: string | null; country: string | null; at: number };
+
+export function LoginList({ L, rows }: { L: Lang; rows: LoginRow[] }) {
+  const ne = L === "ne";
+  if (!rows.length) return <p>–</p>;
+  return (
+    <>
+      {rows.map((r) => (
+        <div className="item" key={r.id}>
+          <span><b>{r.who}</b> <span className={"pill " + (r.ok ? "s-free" : "s-out")}>{r.ok ? (ne ? "सफल" : "ok") : (ne ? "असफल" : "failed")}</span><br />
+            <small>{r.kind === "signup" ? (ne ? "होटल बनाउँदा" : "created the hotel") : r.kind === "staff" ? (ne ? "स्टाफ" : "staff") : (ne ? "मालिक" : "owner")} · {r.device_name ?? "?"}{r.reason ? " · " + r.reason : ""}<br />{r.country ?? ""} {r.ip ?? ""}</small></span>
+          <small style={{ textAlign: "right" }}>{new Date(r.at).toLocaleString()}</small>
+        </div>))}
+    </>
+  );
+}
+
+function LoginHistory({ L }: { L: Lang }) {
+  const ne = L === "ne";
+  const [rows, setRows] = useState<LoginRow[] | null>(null);
+  return (
+    <div className="card"><h2>{ne ? "लगइन इतिहास" : "Login history"}</h2>
+      <p style={{ fontSize: 14, color: "var(--mute)" }}>{ne ? "कसले, कुन फोन/कम्प्युटरबाट, कहिले साइन इन गर्यो (गलत प्रयास पनि)। ३ महिनासम्म राखिन्छ।" : "Who signed in, from which phone or computer, and when (wrong tries too). Kept for 3 months."}</p>
+      <button className="btn alt" onClick={async () => { const r = await api("/logins"); setRows(r.s === 200 ? r.j.logins : []); }}>{rows ? (ne ? "फेरि लोड" : "Reload") : (ne ? "इतिहास हेर्ने" : "Show history")}</button>
+      {rows && <LoginList L={L} rows={rows} />}
+    </div>
+  );
+}

@@ -23,3 +23,8 @@ export function shortDay(iso: string): string {
   const [, m, d] = iso.split("-").map(Number);
   return `${d}/${m}`;
 }
+
+/** Whole days from a to b (negative when b is earlier). */
+export function daysBetween(a: string, b: string): number {
+  return Math.round((parseISO(b) - parseISO(a)) / DAY);
+}

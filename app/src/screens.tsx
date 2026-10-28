@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { addToRoomBill, cancelBooking, changePrice, checkIn, checkOut, createBooking, loadSampleRooms, moveBooking, type Result } from "./actions";
-import { db, uid } from "./db";
+import { addOrderToBooking, addToRoomBill, checkOut, createBooking, loadSampleRooms, moveBooking, payOrderAtTable, type Result } from "./actions";
+import { MenuCard, PrinterCard, RoomsCard } from "./settingsCards";
+import { PrintBar } from "./PrintBar";
+import { receiptRows } from "./print";
+import { db, STARTER_MENU, uid } from "./db";
 import { calcBill, sumLines } from "./lib/bill";
 import { bookingAt, findConflicts, paidSum } from "./lib/booking";
-import { addDays, shortDay, todayISO } from "./lib/dates";
+import { addDays, daysBetween, shortDay, todayISO } from "./lib/dates";
 import type { Booking, Hotel, Line, Order, Room } from "./lib/types";
 import { tr, type Key, type Lang } from "./i18n";
 import { api, type Session } from "./api";
-import { AccountCard } from "./screens2";
+import { AccountCard, LocalCard } from "./screens2";
 
 export type Tab = "rooms" | "book" | "stay" | "food" | "bill" | "money" | "clean" | "set" | "staff";
 export type P = {
@@ -17,7 +20,6 @@ export type P = {
 };
 
 const rs = (n: number) => "Rs " + Math.round(n).toLocaleString("en-IN");
-const MENU: [string, number][] = [["Dal Bhat set", 350], ["Momo (10)", 250], ["Chowmein", 220], ["Tea", 40], ["Coffee", 90], ["Fried rice", 260]];
 const useT = (L: Lang) => (k: Key) => tr(L, k);
 const errText = (L: Lang, e: string) => (e === "name" ? tr(L, "needName") : e === "taken" ? tr(L, "taken") : L === "ne" ? "यो काम गर्न मिलेन। फेरि जाँच्नुहोस्।" : "Could not do this. Please check and try again.");
 
@@ -32,9 +34,10 @@ function stateOf(r: Room, bookings: Booking[], day: string): "free" | "booked" |
   return r.st === "clean" ? "clean" : "free";
 }
 
-export function Chart({ h, L, rooms, bookings, go, setDraft }: P) {
+export function Chart({ h, L, rooms, bookings, go, setDraft, session }: P) {
   const t = useT(L);
   const [off, setOff] = useState(0);
+  const jump = (iso: string) => { if (iso.length === 10 && !Number.isNaN(Date.parse(iso + "T00:00:00Z"))) setOff(daysBetween(todayISO(), iso)); };
   const today = todayISO();
   const days = Array.from({ length: 7 }, (_, i) => addDays(today, off + i));
   const conflicts = findConflicts(bookings);
@@ -46,8 +49,8 @@ export function Chart({ h, L, rooms, bookings, go, setDraft }: P) {
     return (
       <div className="card">
         <h2>{t("rooms")}</h2>
-        <button className="btn" onClick={() => void loadSampleRooms()}>{t("sample")}</button>
-        <button className="btn alt" onClick={() => go("set")}>{t("set")}</button>
+        {!session && <button className="btn alt" onClick={() => void loadSampleRooms()}>{t("sample")}</button>}
+        <button className="btn" onClick={() => go("set")}>{L === "ne" ? "कोठा थप्नुस् (सेटिङ)" : "Add rooms (Settings)"}</button>
       </div>
     );
   return (
@@ -69,7 +72,8 @@ export function Chart({ h, L, rooms, bookings, go, setDraft }: P) {
       <div className="card">
         <div className="row"><h2>{t("rooms")}</h2>
           <span><button className="btn sm alt" aria-label="back" onClick={() => setOff(off - 7)}>‹</button><button className="btn sm alt" onClick={() => setOff(0)}>{t("today")}</button><button className="btn sm alt" aria-label="next" onClick={() => setOff(off + 7)}>›</button></span></div>
-        <div className="leg"><span className="pill s-free">{t("free")}</span> <span className="pill s-booked">{t("booked")}</span> <span className="pill s-occupied">{t("occupied")}</span> <span className="pill s-clean">{t("toClean")}</span></div>
+        <label htmlFor="jd">{L === "ne" ? "मितिमा जानुस्" : "Go to date"}</label><input id="jd" type="date" value={days[0]} onChange={(e) => jump(e.target.value)} />
+        <div className="leg" style={{ marginTop: 8 }}><span className="pill s-free">{t("free")}</span> <span className="pill s-booked">{t("booked")}</span> <span className="pill s-occupied">{t("occupied")}</span> <span className="pill s-clean">{t("toClean")}</span></div>
         <p style={{ color: "var(--mute)", fontSize: 14, margin: "6px 0" }}>{t("tapFree")}</p>
         <div className="tbl"><table>
           <thead><tr><th />{days.map((d) => <th key={d}>{shortDay(d)}</th>)}</tr></thead>
@@ -130,59 +134,21 @@ export function Booking({ h, L, rooms, draft, setDraft, go }: P) {
   );
 }
 
-export function Stay({ L, bookings, sel, go }: P) {
-  const t = useT(L);
-  const list = bookings.filter((b) => b.status === "booked" || b.status === "occupied").sort((a, b) => a.from.localeCompare(b.from));
-  const [ci, setCi] = useState(sel);
-  const [why, setWhy] = useState<{ id: string; noShow: boolean } | null>(null);
-  const [reason, setReason] = useState("");
-  const [f, setF] = useState({ nationality: "Nepali", persons: "1", idNo: "", visa: "", extraBeds: "0" });
-  const b = bookings.find((x) => x.id === ci && x.status === "booked");
-  return (
-    <>
-      <div className="card"><h2>{t("stay")}</h2>
-        {list.map((x) => (
-          <div className="item" key={x.id}>
-            <div><b>{x.guest}</b><br /><small>{x.room} · {shortDay(x.from)} · {x.nights} {t("nights")} · {x.src}</small></div>
-            {x.status === "booked" ? (
-              <span><button className="btn sm" onClick={() => setCi(x.id)}>{t("stay")}</button><button className="btn sm alt" onClick={() => setWhy({ id: x.id, noShow: false })}>✕</button></span>
-            ) : <button className="pill s-occupied" style={{ border: 0 }} onClick={() => go("bill", x.id)}>{t("occupied")}</button>}
-          </div>))}
-        {!list.length && <p>–</p>}
-      </div>
-      {why && (
-        <div className="card">
-          <label htmlFor="rs">{t("reason")}</label><input id="rs" value={reason} onChange={(e) => setReason(e.target.value)} />
-          <div className="grid2">
-            <button className="btn bad" onClick={async () => { await cancelBooking(why.id, reason || "-"); setWhy(null); setReason(""); }}>{t("cancel")}</button>
-            <button className="btn alt" onClick={async () => { await cancelBooking(why.id, reason || "-", true); setWhy(null); setReason(""); }}>{t("noshow")}</button>
-          </div>
-        </div>)}
-      {b && (
-        <div className="card"><h2>{b.guest}</h2>
-          <div className="grid2">
-            <div><label htmlFor="nat">{t("nationality")}</label><select id="nat" value={f.nationality} onChange={(e) => setF({ ...f, nationality: e.target.value })}><option>Nepali</option><option>Indian</option><option>Other</option></select></div>
-            <div><label htmlFor="per">{t("persons")}</label><input id="per" type="number" min="1" value={f.persons} onChange={(e) => setF({ ...f, persons: e.target.value })} /></div>
-          </div>
-          <label htmlFor="idn">{t("idNo")}</label><input id="idn" value={f.idNo} onChange={(e) => setF({ ...f, idNo: e.target.value })} />
-          <label htmlFor="vs">{t("visa")}</label><input id="vs" value={f.visa} onChange={(e) => setF({ ...f, visa: e.target.value })} />
-          <label htmlFor="eb">{t("extraBed")}</label><select id="eb" value={f.extraBeds} onChange={(e) => setF({ ...f, extraBeds: e.target.value })}><option>0</option><option>1</option><option>2</option></select>
-          <button className="btn" onClick={async () => { await checkIn(b.id, { nationality: f.nationality, persons: Math.max(1, Number(f.persons) || 1), idNo: f.idNo.trim(), visa: f.visa.trim(), extraBeds: Number(f.extraBeds) }); setCi(""); go("rooms"); }}>{t("done")}</button>
-        </div>)}
-    </>
-  );
-}
-
 export function Food({ h, L, bookings, orders }: P) {
   const t = useT(L);
   const [cart, setCart] = useState<Line[]>([]);
   const occupied = bookings.filter((b) => b.status === "occupied");
   const [to, setTo] = useState("T1");
+  const menu = h.menu ?? STARTER_MENU;
+  const cats = [...new Set(menu.map((m) => m.cat || "-"))];
   const add = (name: string, price: number) => setCart((c) => (c.find((l) => l.name === name) ? c.map((l) => (l.name === name ? { ...l, qty: l.qty + 1 } : l)) : [...c, { name, qty: 1, price }]));
   return (
     <>
       <div className="card"><h2>{t("food")}</h2>
-        <div className="grid2">{MENU.map(([n, p]) => <button key={n} className="btn alt" style={{ margin: 0 }} onClick={() => add(n, p)}>{n}<br /><small>{rs(p)}</small></button>)}</div></div>
+        {cats.map((cat) => (
+          <div key={cat}>{cats.length > 1 && <h3>{cat}</h3>}
+            <div className="grid2">{menu.filter((m) => (m.cat || "-") === cat).map((m) => <button key={m.id} className="btn alt" style={{ margin: 0 }} onClick={() => add(m.name, m.price)}>{m.name}<br /><small>{rs(m.price)}</small></button>)}</div></div>))}
+        {!menu.length && <p style={{ color: "var(--mute)" }}>{L === "ne" ? "मेनु खाली छ। सेटिङमा मेनु थप्नुस्।" : "The menu is empty. Add items in Settings."}</p>}</div>
       <div className="card"><h3>{t("order")}</h3>
         {cart.map((l, i) => <div className="item" key={l.name}><span>{l.qty} × {l.name}</span><span>{rs(l.qty * l.price)} <button className="btn sm bad" aria-label="remove" onClick={() => setCart(cart.filter((_, j) => j !== i))}>✕</button></span></div>)}
         {!cart.length && <p style={{ color: "var(--mute)" }}>{t("empty")}</p>}
@@ -199,7 +165,16 @@ export function Food({ h, L, bookings, orders }: P) {
               <div><b>{bk ? `${t("room")} ${bk.room}` : o.to.replace("T", t("table") + " ")}</b><br /><small>{o.items.map((x) => `${x.qty}× ${x.name}`).join(", ")}</small></div>
               {!o.done ? <button className="btn sm" onClick={() => void db.orders.update(o.id, { done: true })}>{t("served")}</button>
                 : bid ? <button className="btn sm" onClick={async () => { const r = await addToRoomBill(bid, o.items); if (r.ok) await db.orders.update(o.id, { billed: true }); }}>{t("toRoom")}</button>
-                : <button className="btn sm" onClick={() => void db.orders.update(o.id, { billed: true })}>{t("atTable")}</button>}
+                : (
+                  <span>
+                    <button className="btn sm" onClick={() => void payOrderAtTable(o.id, "cash")}>{L === "ne" ? "नगद तिर्यो" : "Paid cash"}</button>
+                    <button className="btn sm" onClick={() => void payOrderAtTable(o.id, "qr")}>{L === "ne" ? "QR तिर्यो" : "Paid QR"}</button>
+                    {occupied.length > 0 && (
+                      <select aria-label={L === "ne" ? "रुम बिलमा राख्ने" : "Put on a room bill"} value="" onChange={(e) => e.target.value && void addOrderToBooking(o.id, e.target.value)}>
+                        <option value="">{L === "ne" ? "तिरेन → रुम बिलमा…" : "Not paid → room bill…"}</option>
+                        {occupied.map((b2) => <option key={b2.id} value={b2.id}>{t("room")} {b2.room} · {b2.guest}</option>)}
+                      </select>)}
+                  </span>)}
             </div>);
         })}
         <p style={{ display: "none" }}>{h.name}</p>
@@ -208,7 +183,8 @@ export function Food({ h, L, bookings, orders }: P) {
   );
 }
 
-export function BillScreen({ h, L, rooms, bookings, sel }: P) {
+export function BillScreen({ h, L, rooms, bookings, orders, sel }: P) {
+  const [reprint, setReprint] = useState("");
   const t = useT(L);
   const occ = bookings.filter((b) => b.status === "occupied");
   const [pick, setPick] = useState(sel);
@@ -216,10 +192,29 @@ export function BillScreen({ h, L, rooms, bookings, sel }: P) {
   const [cash, setCash] = useState<string | null>(null);
   const [qr, setQr] = useState("0");
   const [err, setErr] = useState("");
-  const [done, setDone] = useState<{ billNo: string; due: number } | null>(null);
+  const [done, setDone] = useState<{ billNo: string; due: number; id: string } | null>(null);
   const b = occ.find((x) => x.id === pick) ?? occ[0];
-  if (done) return <div className="card"><h2>{t("bill")} {done.billNo}</h2>{done.due > 0 && <div className="warn">{t("due")}: {rs(done.due)}</div>}<button className="btn" onClick={() => setDone(null)}>OK</button></div>;
-  if (!b) return <div className="card"><h2>{t("bill")}</h2><p>{t("noOcc")}</p></div>;
+  const recent = bookings.filter((x) => x.status === "done" && x.billNo).sort((p, q) => q.updatedAt - p.updatedAt).slice(0, 8);
+  const waiting = (id: string) => orders.filter((o) => !o.billed && (o.to === "R" + id || o.to.startsWith("T")));
+  const rowsFor = (x: Booking, copy: boolean) => () => receiptRows(h, x, rooms.find((r) => r.n === x.room), L, { copy });
+  const finished = done ? bookings.find((x) => x.id === done.id) : undefined;
+  if (done)
+    return (
+      <div className="card"><h2>{t("bill")} {done.billNo} ✓</h2>
+        {done.due > 0 && <div className="warn">{t("due")}: {rs(done.due)}</div>}
+        {finished && <PrintBar L={L} rows={rowsFor(finished, false)} />}
+        <button className="btn alt" onClick={() => setDone(null)}>OK</button></div>
+    );
+  const recentCard = recent.length > 0 && (
+    <div className="card"><h3>{L === "ne" ? "हालका बिल (फेरि प्रिन्ट)" : "Recent bills (print again)"}</h3>
+      {recent.map((x) => (
+        <div key={x.id}>
+          <div className="item"><span><b>{x.billNo}</b> · {x.room} {x.guest}</span><button className="btn sm alt" onClick={() => setReprint(reprint === x.id ? "" : x.id)}>🖨</button></div>
+          {reprint === x.id && <PrintBar L={L} rows={rowsFor(x, true)} />}
+        </div>))}
+    </div>
+  );
+  if (!b) return <><div className="card"><h2>{t("bill")}</h2><p>{t("noOcc")}</p></div>{recentCard}</>;
   const room = rooms.find((r) => r.n === b.room);
   const e = Math.max(0, Math.round(Number(extra) || 0));
   const roomAmt = (room?.price ?? 0) * b.nights, food = sumLines(b.food);
@@ -231,9 +226,10 @@ export function BillScreen({ h, L, rooms, bookings, sel }: P) {
     if (!b) return;
     const r: Result<{ billNo: string; due: number }> = await checkOut(b.id, e, { cash: Number(cashV) || 0, qr: Number(qr) || 0 });
     if (!r.ok) return setErr(r.error === "amount" ? (L === "ne" ? "भुक्तानी तिर्न बाँकी भन्दा बढी छ।" : "Payment is more than the amount due.") : errText(L, r.error));
-    setDone(r.value);
+    setDone({ ...r.value, id: b.id });
   }
   return (
+    <>
     <div className="card"><h2>{t("bill")}</h2>
       <label htmlFor="bsel">{t("room")}</label>
       <select id="bsel" value={b.id} onChange={(e2) => { setPick(e2.target.value); setCash(null); setErr(""); }}>{occ.map((x) => <option key={x.id} value={x.id}>{x.room} · {x.guest}</option>)}</select>
@@ -249,6 +245,12 @@ export function BillScreen({ h, L, rooms, bookings, sel }: P) {
         <tr><td>{t("advancePaid")}</td><td>− {rs(paidSum(b))}</td></tr>
         <tr className="tot"><td>{t("due")}</td><td>{rs(due)}</td></tr>
       </tbody></table>
+      {waiting(b.id).length > 0 && (
+        <div className="note"><b>{L === "ne" ? "रेस्टुरेन्टका बिल बाँकी छन्" : "Restaurant orders not on a bill yet"}</b>
+          {waiting(b.id).map((o) => (
+            <div className="item" key={o.id}><span>{o.to.startsWith("T") ? o.to.replace("T", t("table") + " ") : t("room") + " " + b.room}<br /><small>{o.items.map((x) => `${x.qty}× ${x.name}`).join(", ")} · {rs(sumLines(o.items))}</small></span>
+              <button className="btn sm" onClick={() => void addOrderToBooking(o.id, b.id)}>{L === "ne" ? "यो बिलमा थप्ने" : "Add to this bill"}</button></div>))}
+        </div>)}
       <div className="grid2">
         <div><label htmlFor="pc">{t("cash")}</label><input id="pc" type="number" min="0" inputMode="numeric" value={cashV} onChange={(x) => setCash(x.target.value)} /></div>
         <div><label htmlFor="pq">{t("qr")}</label><input id="pq" type="number" min="0" inputMode="numeric" value={qr} onChange={(x) => setQr(x.target.value)} /></div>
@@ -256,6 +258,8 @@ export function BillScreen({ h, L, rooms, bookings, sel }: P) {
       {err && <div className="warn" role="alert">{err}</div>}
       <button className="btn" onClick={() => void out()}>{t("checkout")}</button>
     </div>
+    {recentCard}
+    </>
   );
 }
 
@@ -263,13 +267,15 @@ function csv(rows: (string | number)[][]) {
   return "﻿" + rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
 }
 
-export function Money({ h, L, bookings }: P) {
+export function Money({ h, L, bookings, orders }: P) {
   const t = useT(L);
   const day = todayISO();
   const isToday = (ms: number) => todayISO(new Date(ms)) === day;
   const pays = bookings.flatMap((b) => b.payments.filter((p) => isToday(p.at)).map((p) => ({ ...p, who: b.guest, room: b.room })));
   const by: Record<string, number> = {};
   for (const p of pays) by[p.method] = (by[p.method] ?? 0) + (p.kind === "refund" ? -p.amount : p.amount);
+  const tableSales = orders.filter((o) => o.paid && isToday(o.paid.at));
+  for (const o of tableSales) by[o.paid!.method] = (by[o.paid!.method] ?? 0) + o.paid!.amount;
   function download() {
     const rows: (string | number)[][] = [["Bill", "Room", "Guest", "From", "Nights", "Status", "Source", "Paid"]];
     for (const b of bookings) rows.push([b.billNo ?? "", b.room, b.guest, b.from, b.nights, b.status, b.src, paidSum(b)]);
@@ -282,7 +288,8 @@ export function Money({ h, L, bookings }: P) {
   return (
     <div className="card"><h2>{t("day")} · {shortDay(day)}</h2>
       {Object.entries(by).map(([m, v]) => <div className="item" key={m}><span>{m}</span><b>{rs(v)}</b></div>)}
-      {!pays.length && <p>{t("noPay")}</p>}
+      {!pays.length && !tableSales.length && <p>{t("noPay")}</p>}
+      {tableSales.map((o) => <div className="item" key={o.id}><span>{L === "ne" ? "टेबल बिक्री" : "Table sale"} · {o.to.replace("T", "")}<br /><small>{o.paid!.method}</small></span><span>{rs(o.paid!.amount)}</span></div>)}
       {pays.map((p) => <div className="item" key={p.id}><span>{p.who} · {p.room}<br /><small>{p.method} · {p.kind}</small></span><span>{rs(p.amount)}</span></div>)}
       {h.feat.excel && <button className="btn alt" onClick={download}>{t("export")}</button>}
     </div>
@@ -305,10 +312,10 @@ export function SettingsScreen({ h, L, rooms, can, session, onOut }: P) {
   const upd = (patch: Partial<Hotel>) => void db.hotel.update("main", patch);
   const bill = (patch: Partial<Hotel["bill"]>) => upd({ bill: { ...h.bill, ...patch } });
   const [src, setSrc] = useState("");
-  const [nr, setNr] = useState({ n: "", type: "Double", floor: "1", beds: "2", price: "2500" });
   const [log, setLog] = useState<{ at: number; action: string; detail: string }[]>([]);
   return (
     <>
+      {!session && <LocalCard L={L} onOut={onOut} />}
       {can("settings.edit") && <div className="card"><h2>{t("hotelInfo")}</h2>
         <label htmlFor="hn">{t("name")}</label><input id="hn" defaultValue={h.name} onBlur={(e) => upd({ name: e.target.value.trim() || h.name })} />
         <label htmlFor="ha">{t("address")}</label><input id="ha" defaultValue={h.address} onBlur={(e) => upd({ address: e.target.value })} />
@@ -325,24 +332,9 @@ export function SettingsScreen({ h, L, rooms, can, session, onOut }: P) {
           <div><label htmlFor="sp">{t("svc")} %</label><input id="sp" type="number" inputMode="decimal" defaultValue={h.bill.svcPct} onBlur={(e) => bill({ svcPct: Math.max(0, Number(e.target.value) || 0) })} /></div>
         </div>
         <div className="sw"><div>{t("keepId")}<small>{t("consent")}</small></div><Toggle label={t("keepId")} on={h.bill.idPhoto} onClick={() => bill({ idPhoto: !h.bill.idPhoto })} /></div></div>}
-      {(can("prices.edit") || can("rooms.manage")) && <div className="card"><h2>{t("roomPrices")}</h2>
-        {rooms.map((r) => (
-          <div className="row" style={{ marginBottom: 6 }} key={r.n}>
-            <b style={{ width: 96 }}>{r.n} {r.type}</b>
-            <input aria-label={`price ${r.n}`} type="number" inputMode="numeric" defaultValue={r.price} onBlur={(e) => void changePrice(r.n, Number(e.target.value))} />
-            <button className={"btn sm " + (r.st === "out" ? "bad" : "alt")} onClick={() => void db.rooms.update(r.n, { st: r.st === "out" ? "free" : "out" })}>{r.st === "out" ? "✕" : "✓"}</button>
-          </div>))}
-        <h3>＋ {t("room")}</h3>
-        <div className="grid2">
-          <input aria-label="room no" placeholder="No." value={nr.n} onChange={(e) => setNr({ ...nr, n: e.target.value })} />
-          <select aria-label="type" value={nr.type} onChange={(e) => setNr({ ...nr, type: e.target.value })}>{["Single", "Double", "Deluxe", "Family", "Dorm"].map((x) => <option key={x}>{x}</option>)}</select>
-          <input aria-label="floor" type="number" placeholder="Floor" value={nr.floor} onChange={(e) => setNr({ ...nr, floor: e.target.value })} />
-          <input aria-label="beds" type="number" placeholder="Beds" value={nr.beds} onChange={(e) => setNr({ ...nr, beds: e.target.value })} />
-        </div>
-        <input aria-label="new price" type="number" style={{ marginTop: 8 }} value={nr.price} onChange={(e) => setNr({ ...nr, price: e.target.value })} />
-        <button className="btn" onClick={async () => { const n = nr.n.trim(); if (!n || (await db.rooms.get(n))) return; await db.rooms.add({ n, type: nr.type, floor: Number(nr.floor) || 1, beds: Number(nr.beds) || 1, price: Math.max(0, Number(nr.price) || 0), st: "free" }); setNr({ ...nr, n: "" }); }}>＋</button>
-        {!rooms.length && <button className="btn alt" onClick={() => void loadSampleRooms()}>{t("sample")}</button>}
-      </div>}
+      {(can("prices.edit") || can("rooms.manage")) && <RoomsCard L={L} rooms={rooms} can={can} local={!session} />}
+      {can("settings.edit") && h.feat.restaurant && <MenuCard L={L} h={h} />}
+      <PrinterCard L={L} />
       {h.feat.sources && can("settings.edit") ? (
         <div className="card"><h2>{t("sources")}</h2>
           <div>{h.sources.map((s, i) => <span className="chip" key={s}>{s}<button aria-label={"remove " + s} onClick={() => upd({ sources: h.sources.filter((_, j) => j !== i) })}>✕</button></span>)}</div>

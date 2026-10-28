@@ -16,9 +16,15 @@ type Row = Record<string, any>;
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
+function validMenu(m: unknown): boolean {
+  if (m === undefined) return true;
+  if (!Array.isArray(m) || m.length > 300) return false;
+  return m.every((x) => x && typeof x.id === "string" && x.id.length <= 64 && typeof x.name === "string" && x.name.length <= 80 && typeof x.price === "number" && x.price >= 0 && x.price <= 1_000_000 && typeof x.cat === "string" && x.cat.length <= 40);
+}
+
 /** What a change needs, worked out by comparing it with what the server already has. Returns null when it is not allowed at all. */
 export function needed(t: string, old: Row | null, nu: Row): { all: Perm[]; any?: Perm[] } | null {
-  if (t === "hotel") return { all: ["settings.edit"] };
+  if (t === "hotel") return validMenu(nu.menu) ? { all: ["settings.edit"] } : null;
   if (t === "orders") return { all: ["restaurant"] };
   if (t === "rooms") {
     if (typeof nu.n !== "string" || !nu.n) return null;
@@ -32,7 +38,7 @@ export function needed(t: string, old: Row | null, nu: Row): { all: Perm[]; any?
       else if (nu.st === "clean") any.push("checkout", "housekeeping", "rooms.manage");
       else all.push("rooms.manage");
     }
-    if (old.type !== nu.type || old.floor !== nu.floor || old.beds !== nu.beds) all.push("rooms.manage");
+    if (old.type !== nu.type || old.floor !== nu.floor || old.beds !== nu.beds || !!old.deleted !== !!nu.deleted) all.push("rooms.manage");
     return { all, any: any.length ? any : undefined };
   }
   if (t === "bookings") {
@@ -98,6 +104,11 @@ sync.post("/push", async (c) => {
     if (ch.t === "orders" && !feat.restaurant) { reject("feature_off"); continue; }
     const need = needed(ch.t, old, data);
     if (!need) { reject("invalid"); continue; }
+    if (ch.t === "rooms" && data.deleted && !old?.deleted) {
+      // a room with a booking or a guest cannot be deleted, whatever the phone says
+      const live = await c.env.DB.prepare("SELECT 1 AS x FROM records WHERE hotel_id=? AND tbl='bookings' AND json_extract(data,'$.room')=? AND json_extract(data,'$.status') IN ('booked','occupied') LIMIT 1").bind(hotel, data.n).first();
+      if (live) { reject("in_use"); continue; }
+    }
     if (!ok(perms, need)) {
       reject("forbidden");
       await c.env.DB.prepare("INSERT INTO audit (hotel_id,at,user_id,action,detail) VALUES (?,?,?,?,?)").bind(hotel, Date.now(), user.id, "refused", `${ch.t} ${ch.id} needs ${[...need.all, ...(need.any ?? [])].join(",")}`).run();

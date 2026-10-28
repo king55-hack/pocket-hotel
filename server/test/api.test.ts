@@ -238,6 +238,77 @@ describe("what each role may change (sync)", () => {
   });
 });
 
+describe("login history", () => {
+  it("records who signed in from which device, also wrong tries, and shortens the address", async () => {
+    const env = ENV();
+    const a = await signup(env);
+    const s = await addStaff(env, a.tok, a.hotel.code, "waiter", "restaurant");
+    const dev = { id: "device-bad-try-1", name: "Android" };
+    await call(env, "/auth/staff", { body: { hotelCode: a.hotel.code, username: "waiter", pin: "999999", device: dev }, headers: { "CF-Connecting-IP": "203.0.113.77", "cf-ipcountry": "NP" } });
+    await call(env, "/auth/login", { body: { email: a.email, password: "wrong-pass-9", device: dev } });
+    const l = (await call(env, "/logins", { token: a.tok })).j.logins as any[];
+    expect(l.map((x) => x.kind + ":" + x.ok)).toEqual(expect.arrayContaining(["signup:1", "staff:1", "staff:0", "owner:0"]));
+    const bad = l.find((x) => x.kind === "staff" && !x.ok);
+    expect(bad).toMatchObject({ who: "waiter", reason: "wrong PIN", device_name: "Android", ip: "203.0.113.x", country: "NP" });
+    expect(l.find((x) => x.kind === "staff" && x.ok).reason).toBe("new device");
+    expect(JSON.stringify(l)).not.toContain("482915"); // never the PIN or password
+    expect(JSON.stringify(l)).not.toContain("999999");
+    expect(JSON.stringify(l)).not.toContain("secret-pass-1");
+    expect(s.id).toBeTruthy();
+  });
+  it("only the owner can read it, and each hotel sees only its own", async () => {
+    const env = ENV();
+    const a = await signup(env, "A");
+    const b = await signup(env, "B");
+    const mgr = await addStaff(env, a.tok, a.hotel.code, "mgr", "manager");
+    expect((await call(env, "/logins", { token: mgr.tok })).s).toBe(403);
+    expect((await call(env, "/logins")).s).toBe(401);
+    const lb = (await call(env, "/logins", { token: b.tok })).j.logins as any[];
+    expect(lb).toHaveLength(1);
+    expect(lb[0].who).toBe(b.email);
+  });
+  it("the admin can read a hotel's history with the key, and it is erased with the hotel", async () => {
+    const env = ENV();
+    const H = { "x-admin-key": "admin-key-for-tests" };
+    const a = await signup(env);
+    expect((await call(env, `/admin/hotels/${a.hotel.id}/logins`, { token: a.tok })).s).toBe(403);
+    expect(((await call(env, `/admin/hotels/${a.hotel.id}/logins`, { headers: H })).j.logins as any[]).length).toBe(1);
+    const id = (await call(env, "/account/closure", { token: a.tok, body: { reasonCode: "not_using", password: "secret-pass-1" } })).j.request.id;
+    await call(env, `/admin/closures/${id}/approve`, { headers: H, body: { graceDays: 0 } });
+    await call(env, "/admin/run-deletions", { headers: H, body: {} });
+    expect((await env.DB.prepare("SELECT COUNT(*) AS n FROM login_events").first<any>()).n).toBe(0);
+  });
+});
+
+describe("deleting rooms and the menu", () => {
+  it("only people who manage rooms can delete one, and a room with a booking cannot be deleted", async () => {
+    const env = ENV();
+    const a = await signup(env);
+    await push(env, a.tok, { t: "rooms", id: "101", data: room("101") }, { t: "rooms", id: "102", data: room("102") });
+    const desk = await addStaff(env, a.tok, a.hotel.code, "desk", "reception");
+    const t1 = Date.now() + 1000;
+    expect((await push(env, desk.tok, { t: "rooms", id: "101", data: room("101", { deleted: true }), ts: t1 })).j.rejected[0].reason).toBe("forbidden");
+    await push(env, a.tok, { t: "bookings", id: "b1", data: booking("b1", "101", "2026-11-01") });
+    expect((await push(env, a.tok, { t: "rooms", id: "101", data: room("101", { deleted: true }), ts: t1 })).j.rejected[0].reason).toBe("in_use");
+    expect((await push(env, a.tok, { t: "rooms", id: "102", data: room("102", { deleted: true }), ts: t1 })).j.accepted).toEqual(["102"]);
+    // the room is only hidden: it is still there for old bills
+    const p = (await call(env, "/sync/pull?since=0", { token: a.tok })).j.changes.find((x: any) => x.id === "102");
+    expect(p.data.deleted).toBe(true);
+  });
+
+  it("the menu is part of the hotel settings: owner can change it, reception cannot, and bad menus are refused", async () => {
+    const env = ENV();
+    const a = await signup(env);
+    const menu = [{ id: "m1", name: "Thali", price: 400, cat: "Meals" }];
+    expect((await push(env, a.tok, { t: "hotel", id: "main", data: { name: "H", menu } })).j.accepted).toEqual(["main"]);
+    expect((await call(env, "/sync/pull?since=0", { token: a.tok })).j.changes[0].data.menu).toEqual(menu);
+    const desk = await addStaff(env, a.tok, a.hotel.code, "desk", "reception");
+    expect((await push(env, desk.tok, { t: "hotel", id: "main", data: { name: "H", menu: [] }, ts: Date.now() + 1000 })).j.rejected[0].reason).toBe("forbidden");
+    for (const bad of ["x", [{ id: "a", name: "n", price: -5, cat: "" }], [{ id: "a", name: 5, price: 1, cat: "" }], Array.from({ length: 301 }, (_, i) => ({ id: "i" + i, name: "n", price: 1, cat: "" }))])
+      expect((await push(env, a.tok, { t: "hotel", id: "main", data: { name: "H", menu: bad }, ts: Date.now() + 2000 })).j.rejected[0].reason).toBe("invalid");
+  });
+});
+
 describe("one hotel cannot see or touch another", () => {
   it("records, conflicts, staff, devices and audit stay inside each hotel", async () => {
     const env = ENV();

@@ -3,7 +3,7 @@
 --free:#d9f2e3;--book:#fde9b8;--occ:#cfe0ff;--clean:#e9dcff;--out:#ddd}
 @media(prefers-color-scheme:dark){:root{--bg:#14181c;--card:#1d2328;--ink:#eef1f4;--mute:#9aa4af;--pri:#46c2ad;--pri2:#173a35;--line:#2c353d;--free:#1d4a35;--book:#5a4513;--occ:#1f3a6b;--clean:#43306b;--out:#3a3a3a;--warn:#f0b04a;--bad:#f08080}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,sans-serif;padding-bottom:76px}
+body{margin:0;background:var(--bg);color:var(--ink);font:1rem/1.4 system-ui,sans-serif;padding-bottom:76px}
 header{position:sticky;top:0;z-index:5;background:var(--pri);color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 header b{font-size:18px}
 .lang{background:#fff3;border:0;color:#fff;border-radius:8px;padding:8px 12px;font-size:16px}
@@ -44,3 +44,26 @@ td.c{cursor:pointer}td.f{background:var(--free)}td.b{background:var(--book);font
 .demo{background:#fff3cd;color:#664d03;font-size:12px;text-align:center;padding:4px}
 @media(min-width:700px){nav{justify-content:center}nav button{max-width:110px}}
 
+
+/* readable on every screen */
+small{font-size:14px}
+nav button{font-size:13px}
+th,td{font-size:14px}
+.pill{font-size:14px}
+@media(min-width:820px){html{font-size:17px}main{max-width:960px}}
+@media(min-width:1200px){html{font-size:18px}}
+img{max-width:100%}
+
+/* printing: only the bill picture is printed */
+#print-area{display:none}
+@media print{
+  body>*:not(#print-area){display:none !important}
+  body{background:#fff;padding:0}
+  #print-area{display:block !important}
+  #print-area img{display:block;margin:0 auto;image-rendering:auto}
+  .paper-58{width:48mm}.paper-80{width:72mm}.paper-a4{width:150mm}
+}
+
+.lang{min-height:44px;min-width:44px}
+.tg{width:56px;height:32px}.tg::after{width:26px;height:26px}.tg.on::after{left:27px}
+.chip{padding:2px 4px 2px 12px}.chip button{min-width:40px;min-height:40px;font-size:18px}

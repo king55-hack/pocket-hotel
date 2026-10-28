@@ -5,7 +5,7 @@ import { hashPassword, randomHex, safeEqual, sha256, signJwt, verifyJwt } from "
 import { sendMail, type Env } from "./mail";
 import { otpEmail } from "./otpEmail";
 import { DEFAULT_FEATURES, PERMS, permsOf } from "./perms";
-import { audit, bad, body, need, type App } from "./util";
+import { audit, bad, body, logLogin, need, type App } from "./util";
 import { sync } from "./sync";
 import { staff } from "./staff";
 import { account } from "./account";
@@ -120,6 +120,7 @@ app.post("/auth/signup", async (c) => {
     c.env.DB.prepare("INSERT INTO users (id,hotel_id,email,name,role,perms,salt,hash,created_at) VALUES (?,?,?,?,?,?,?,?,?)").bind(userId, hotelId, email, String(b.name || "").slice(0, 80), "owner", JSON.stringify(PERMS), salt, await hashPassword(b.password, salt), now),
   ]);
   await upsertDevice(c.env, b.device.id, hotelId, userId, b.device.name, true);
+  await logLogin(c, { hotel: hotelId, user: userId, who: email, kind: "signup", ok: true, device: b.device });
   const u = await c.env.DB.prepare("SELECT * FROM users WHERE id=?").bind(userId).first<any>();
   return c.json(await session(c.env, u, b.device.id));
 });
@@ -131,7 +132,11 @@ app.post("/auth/login", async (c) => {
   if (await tooMany(c.env, key, 8)) return bad(c, 429, "locked");
   const u = await c.env.DB.prepare("SELECT * FROM users WHERE email=? AND active=1").bind(email).first<any>();
   const good = u ? safeEqual(await hashPassword(b.password, u.salt), u.hash) : (await hashPassword(b.password, "x".repeat(24)), false);
-  if (!u || !good) { await fail(c.env, key); return bad(c, 401, "bad_login"); }
+  if (!u || !good) {
+    await fail(c.env, key);
+    if (u) await logLogin(c, { hotel: u.hotel_id, user: u.id, who: email, kind: "owner", ok: false, reason: "wrong password", device: b.device });
+    return bad(c, 401, "bad_login");
+  }
   const dev = await c.env.DB.prepare("SELECT hotel_id,revoked,owner_ok FROM devices WHERE id=?").bind(b.device.id).first<{ hotel_id: string; revoked: number; owner_ok: number }>();
   if (dev && dev.hotel_id !== u.hotel_id) return bad(c, 409, "device_conflict");
   if (dev?.revoked) return bad(c, 403, "device_revoked");
@@ -142,9 +147,13 @@ app.post("/auth/login", async (c) => {
       if ("error" in r && r.error === "mail") return bad(c, 503, "mail");
       return c.json({ error: "otp_required", devCode: "error" in r ? undefined : r.devCode }, 401);
     }
-    if (!(await checkOtp(c.env, email, "login", b.code))) return bad(c, 401, "bad_code");
+    if (!(await checkOtp(c.env, email, "login", b.code))) {
+      await logLogin(c, { hotel: u.hotel_id, user: u.id, who: email, kind: "owner", ok: false, reason: "wrong email code", device: b.device });
+      return bad(c, 401, "bad_code");
+    }
   }
   if (!(await upsertDevice(c.env, b.device.id, u.hotel_id, u.id, b.device.name, true))) return bad(c, 409, "device_conflict");
+  await logLogin(c, { hotel: u.hotel_id, user: u.id, who: email, kind: "owner", ok: true, device: b.device, newDevice: !dev });
   return c.json(await session(c.env, u, b.device.id));
 });
 
@@ -157,10 +166,15 @@ app.post("/auth/staff", async (c) => {
   if (await tooMany(c.env, key, 5)) return bad(c, 429, "locked");
   const u = await c.env.DB.prepare("SELECT u.* FROM users u JOIN hotels h ON h.id=u.hotel_id WHERE h.code=? AND u.username=? AND u.active=1").bind(code, username).first<any>();
   const good = u ? safeEqual(await hashPassword(b.pin, u.salt), u.hash) : (await hashPassword(b.pin, "x".repeat(24)), false);
-  if (!u || !good) { await fail(c.env, key); return bad(c, 401, "bad_login"); }
+  if (!u || !good) {
+    await fail(c.env, key);
+    if (u) await logLogin(c, { hotel: u.hotel_id, user: u.id, who: username, kind: "staff", ok: false, reason: "wrong PIN", device: b.device });
+    return bad(c, 401, "bad_login");
+  }
   const dev = await c.env.DB.prepare("SELECT hotel_id,revoked FROM devices WHERE id=?").bind(b.device.id).first<{ hotel_id: string; revoked: number }>();
   if (dev?.revoked) return bad(c, 403, "device_revoked");
   if (!(await upsertDevice(c.env, b.device.id, u.hotel_id, u.id, b.device.name))) return bad(c, 409, "device_conflict");
+  await logLogin(c, { hotel: u.hotel_id, user: u.id, who: username, kind: "staff", ok: true, device: b.device, newDevice: !dev });
   return c.json(await session(c.env, u, b.device.id));
 });
 
@@ -196,7 +210,7 @@ async function auth(c: Context<App>, next: () => Promise<void>) {
   c.set("dev", p.dev);
   await next();
 }
-for (const p of ["/me", "/staff", "/staff/*", "/devices", "/devices/*", "/audit", "/sync/*", "/account/*", "/auth/logout"]) app.use(p, auth);
+for (const p of ["/me", "/staff", "/staff/*", "/devices", "/devices/*", "/audit", "/logins", "/sync/*", "/account/*", "/auth/logout"]) app.use(p, auth);
 
 
 app.post("/auth/logout", async (c) => {
@@ -222,6 +236,13 @@ app.post("/devices/:id/revoke", async (c) => {
   await c.env.DB.prepare("UPDATE refresh_tokens SET revoked=1 WHERE device_id=?").bind(id).run();
   await audit(c.env, c.get("hotel"), c.get("user").id, "device revoked", id);
   return c.json({ ok: true });
+});
+
+/** Who signed in, from which device. Owner only. */
+app.get("/logins", async (c) => {
+  if (c.get("user").role !== "owner") return bad(c, 403, "forbidden");
+  const r = await c.env.DB.prepare("SELECT id,who,kind,ok,reason,device_name,ip,country,at FROM login_events WHERE hotel_id=? ORDER BY id DESC LIMIT 200").bind(c.get("hotel")).all();
+  return c.json({ logins: r.results });
 });
 
 app.get("/audit", async (c) => {

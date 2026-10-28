@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { Audit, Booking, Hotel, Order, Room } from "./lib/types";
+import type { Audit, Booking, Hotel, MenuItem, Order, Room } from "./lib/types";
 
 export type Meta = { k: string; v: unknown };
 
@@ -50,6 +50,15 @@ class HotelDB extends Dexie {
 }
 
 export const db = new HotelDB();
+
+export const STARTER_MENU: MenuItem[] = [
+  { id: "m1", name: "Dal Bhat set", price: 350, cat: "Meals" },
+  { id: "m2", name: "Momo (10)", price: 250, cat: "Meals" },
+  { id: "m3", name: "Chowmein", price: 220, cat: "Meals" },
+  { id: "m4", name: "Fried rice", price: 260, cat: "Meals" },
+  { id: "m5", name: "Tea", price: 40, cat: "Drinks" },
+  { id: "m6", name: "Coffee", price: 90, cat: "Drinks" },
+];
 
 export const DEFAULT_HOTEL: Hotel = {
   id: "main",

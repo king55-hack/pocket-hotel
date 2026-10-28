@@ -21,7 +21,8 @@ h1,h2{line-height:1.2}a{color:#0f6b5c}
 <li>Guest details the hotel types in: name, phone, nationality, ID or passport number and visa details. ID photos are off by default.</li>
 <li>Staff names, login names and PIN codes. PINs and passwords are stored only as salted hashes, never in plain text.</li>
 <li>The owner's email address, used to sign in and to send a 6-digit code.</li>
-<li>A record of important actions (cancelled bookings, price changes, staff changes) and which devices signed in.</li>
+<li>A record of important actions (cancelled bookings, price changes, staff changes).</li>
+<li>A sign-in history for each hotel: who signed in (or tried and failed), which device name, the country and a shortened network address (the last part is dropped), and the time. It is kept for 3 months and is visible to the hotel owner and the service admin. PINs and passwords are never written to it.</li>
 </ul>
 
 <h2>Who can see it</h2>

@@ -1,7 +1,7 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db, ensureHotel } from "../db";
-import { addToRoomBill, cancelBooking, changePrice, checkIn, checkOut, createBooking, loadSampleRooms, moveBooking } from "../actions";
+import { addOrderToBooking, addToRoomBill, cancelBooking, changePrice, checkIn, checkOut, createBooking, editBooking, loadSampleRooms, moveBooking, payOrderAtTable } from "../actions";
 
 const info = { nationality: "Nepali", persons: 1, idNo: "1", visa: "", extraBeds: 0 };
 const mk = (room: string, from = "2026-11-01", nights = 2) => createBooking({ room, from, nights, guest: "Ram", phone: "", src: "Phone", advance: 0 });
@@ -92,5 +92,60 @@ describe("check-out and bill", () => {
     await changePrice("101", 1800);
     expect((await db.rooms.get("101"))?.price).toBe(1800);
     expect((await db.audit.toArray())[0].detail).toContain("1500 -> 1800");
+  });
+});
+
+describe("changing bookings", () => {
+  it("moves dates and room, refuses a clash, and writes it to the log", async () => {
+    const a = await mk("101", "2026-11-01", 2);
+    const b = await mk("102", "2026-11-01", 2);
+    if (!a.ok || !b.ok) throw new Error();
+    expect((await editBooking(a.value.id, { from: "2026-12-01", nights: 3 })).ok).toBe(true);
+    expect(await editBooking(a.value.id, { room: "102", from: "2026-11-02" })).toEqual({ ok: false, error: "taken" });
+    expect((await editBooking(a.value.id, { room: "103", from: "2026-11-01" })).ok).toBe(true);
+    expect(await editBooking(a.value.id, { guest: "  " })).toEqual({ ok: false, error: "name" });
+    expect(await editBooking(a.value.id, { nights: 0 })).toEqual({ ok: false, error: "dates" });
+    expect(await editBooking(a.value.id, { from: "bad" })).toEqual({ ok: false, error: "dates" });
+    expect((await db.audit.toArray()).filter((x) => x.action === "booking edited")).toHaveLength(2);
+  });
+  it("a guest who is in the room can stay longer but not change room or arrival day", async () => {
+    const a = await mk("101", "2026-11-01", 2);
+    if (!a.ok) throw new Error();
+    await checkIn(a.value.id, info);
+    expect((await editBooking(a.value.id, { room: "103", from: "2027-01-01", nights: 4 })).ok).toBe(true);
+    const b = (await db.bookings.get(a.value.id))!;
+    expect([b.room, b.from, b.nights]).toEqual(["101", "2026-11-01", 4]);
+    expect(await mk("101", "2026-11-04", 1)).toEqual({ ok: false, error: "taken" }); // the longer stay blocks the room
+  });
+  it("closed bookings cannot be changed", async () => {
+    const a = await mk("101");
+    if (!a.ok) throw new Error();
+    await cancelBooking(a.value.id, "x");
+    expect(await editBooking(a.value.id, { nights: 3 })).toEqual({ ok: false, error: "state" });
+  });
+});
+
+describe("restaurant money", () => {
+  const order = async (to: string) => {
+    const id = crypto.randomUUID();
+    await db.orders.add({ id, to, items: [{ name: "Momo", qty: 2, price: 250 }], done: true, billed: false, at: Date.now() });
+    return id;
+  };
+  it("a table that pays puts the money in the day book once", async () => {
+    const id = await order("T1");
+    expect((await payOrderAtTable(id, "cash")).ok).toBe(true);
+    expect((await db.orders.get(id))?.paid).toMatchObject({ method: "cash", amount: 500 });
+    expect(await payOrderAtTable(id, "qr")).toEqual({ ok: false, error: "state" });
+  });
+  it("a table that did not pay goes onto a room bill and is paid at check-out", async () => {
+    const b = await createBooking({ room: "102", from: "2026-11-01", nights: 1, guest: "Sita", phone: "", src: "Phone", advance: 0 });
+    if (!b.ok) throw new Error();
+    const id = await order("T2");
+    expect(await addOrderToBooking(id, b.value.id)).toEqual({ ok: false, error: "state" }); // not checked in yet
+    await checkIn(b.value.id, info);
+    expect((await addOrderToBooking(id, b.value.id)).ok).toBe(true);
+    expect((await addOrderToBooking(id, b.value.id)).ok).toBe(false); // not twice
+    const r = await checkOut(b.value.id, 0, { cash: 3000, qr: 0 }); // room 2500 + momo 500
+    expect(r.ok && r.value.due).toBe(0);
   });
 });

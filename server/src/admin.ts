@@ -47,6 +47,11 @@ admin.get("/hotels", async (c) => {
   return c.json({ hotels: r.results.map((h) => ({ ...h, feat: JSON.parse(h.feat) })) });
 });
 
+admin.get("/hotels/:id/logins", async (c) => {
+  const r = await c.env.DB.prepare("SELECT id,who,kind,ok,reason,device_name,ip,country,at FROM login_events WHERE hotel_id=? ORDER BY id DESC LIMIT 200").bind(c.req.param("id")).all();
+  return c.json({ logins: r.results });
+});
+
 /** The admin decides which features each hotel gets. */
 admin.post("/hotels/:id/features", async (c) => {
   const b: any = await c.req.json().catch(() => null);
@@ -98,7 +103,7 @@ export async function purgeHotel(env: Env, hotelId: string) {
       env.DB.prepare("DELETE FROM refresh_tokens WHERE user_id=?").bind(u.id),
       ...(u.email ? [env.DB.prepare("DELETE FROM otps WHERE email=?").bind(u.email), env.DB.prepare("DELETE FROM login_attempts WHERE key IN (?,?)").bind("owner:" + u.email, "closure:" + u.email)] : []),
     ]),
-    ...["records", "conflicts", "audit", "devices", "users"].map((t) => env.DB.prepare(`DELETE FROM ${t} WHERE hotel_id=?`).bind(hotelId)),
+    ...["records", "conflicts", "audit", "login_events", "devices", "users"].map((t) => env.DB.prepare(`DELETE FROM ${t} WHERE hotel_id=?`).bind(hotelId)),
     env.DB.prepare("DELETE FROM hotels WHERE id=?").bind(hotelId),
   ];
   await env.DB.batch(stmts);

@@ -3,7 +3,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { loadSession, onSession } from "./api";
 import { db, ensureHotel, setLang } from "./db";
 import { tr, type Key, type Lang } from "./i18n";
-import { BillScreen, Booking as BookingScreen, Chart, Clean, Food, Money, SettingsScreen, Stay, type P, type Tab } from "./screens";
+import { BillScreen, Booking as BookingScreen, Chart, Clean, Food, Money, SettingsScreen, type P, type Tab } from "./screens";
+import { Bookings } from "./bookingsScreen";
 import { AdminPage, Login, StaffScreen, SyncBadge } from "./screens2";
 import { countPending, getSyncState, onSync, startAutoSync, syncNow } from "./sync";
 
@@ -35,7 +36,7 @@ export function App() {
 
 function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onOut: () => void }) {
   const hotel = useLiveQuery(() => db.hotel.get("main"));
-  const rooms = useLiveQuery(() => db.rooms.orderBy("n").toArray());
+  const rooms = useLiveQuery(() => db.rooms.orderBy("n").filter((r) => !r.deleted).toArray());
   const bookings = useLiveQuery(() => db.bookings.toArray());
   const orders = useLiveQuery(() => db.orders.orderBy("at").toArray());
   const [tab, setTab] = useState<Tab>("rooms");
@@ -66,7 +67,7 @@ function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onO
 
   const tabs: [Tab, string][] = [["rooms", "▦"]];
   if (can("booking.create")) tabs.push(["book", "＋"]);
-  if (can("checkin") || can("booking.cancel")) tabs.push(["stay", "🔑"]);
+  if (can("checkin") || can("booking.cancel") || can("booking.create")) tabs.push(["stay", "📋"]);
   if (hotel.feat.restaurant && can("restaurant")) tabs.push(["food", "🍽"]);
   if (can("checkout")) tabs.push(["bill", "🧾"]);
   if (can("money.view")) tabs.push(["money", "₨"]);
@@ -78,7 +79,7 @@ function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onO
   return (
     <>
       <header>
-        <b>{hotel.name}</b>
+        <b style={{ display: "flex", alignItems: "center", gap: 8 }}><img src="/favicon.png" alt="" width="28" height="28" style={{ borderRadius: 6 }} />{hotel.name}</b>
         <span>
           {session && <SyncBadge L={L} state={sync.status} pending={pending} />}{" "}
           {session && <button className="lang" aria-label="sync now" onClick={() => void syncNow()}>⟳</button>}{" "}
@@ -87,9 +88,13 @@ function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onO
         </span>
       </header>
       <main>
+        {!session && cur !== "set" && (
+          <div className="note" role="status">{L === "ne" ? "परीक्षण मोड: डाटा यही डिभाइसमा मात्र छ।" : "Test mode: data stays on this device only."}{" "}
+            <button className="btn sm" onClick={() => go("set")}>{L === "ne" ? "असली होटल दर्ता गर्नुस्" : "Register a real hotel"}</button></div>
+        )}
         {cur === "rooms" && <Chart {...p} />}
         {cur === "book" && <BookingScreen {...p} />}
-        {cur === "stay" && <Stay {...p} />}
+        {cur === "stay" && <Bookings {...p} />}
         {cur === "food" && <Food {...p} />}
         {cur === "bill" && <BillScreen {...p} />}
         {cur === "money" && <Money {...p} />}

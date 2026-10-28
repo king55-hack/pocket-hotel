@@ -15,8 +15,8 @@ const byName = new Map(TABLES.map((t) => [t[0], t]));
 
 /** The hotel record is shared, but language, features and counters belong to this device or to the admin. */
 function hotelOut(h: Hotel) {
-  const { name, pan, phone, address, bill, sources, updatedAt } = h;
-  return { name, pan, phone, address, bill, sources, updatedAt };
+  const { name, pan, phone, address, bill, sources, menu, updatedAt } = h;
+  return { name, pan, phone, address, bill, sources, menu, updatedAt };
 }
 
 export type SyncState = { status: "idle" | "syncing" | "offline" | "error" | "signed-out"; pending: number; last: number; error?: string };

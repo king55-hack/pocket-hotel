@@ -1,9 +1,9 @@
 import { db, logAudit, uid, ensureHotel } from "./db";
 import { calcBill, sumLines } from "./lib/bill";
-import { findConflict, paidSum } from "./lib/booking";
-import type { Booking, GuestInfo, Line, Payment } from "./lib/types";
+import { findConflict, isActive, paidSum } from "./lib/booking";
+import type { Booking, GuestInfo, Line, OrderPay, Payment } from "./lib/types";
 
-export type Result<T = void> = { ok: true; value: T } | { ok: false; error: "name" | "taken" | "room" | "state" | "amount" };
+export type Result<T = void> = { ok: true; value: T } | { ok: false; error: "name" | "taken" | "room" | "state" | "amount" | "inuse" | "dates" };
 
 export async function createBooking(i: { room: string; from: string; nights: number; guest: string; phone: string; src: string; advance: number }): Promise<Result<Booking>> {
   const guest = i.guest.trim();
@@ -13,7 +13,7 @@ export async function createBooking(i: { room: string; from: string; nights: num
   const advance = Math.max(0, Math.round(i.advance || 0));
   return db.transaction("rw", db.rooms, db.bookings, async () => {
     const room = await db.rooms.get(i.room);
-    if (!room || room.st === "out") return { ok: false, error: "room" } as const;
+    if (!room || room.deleted || room.st === "out") return { ok: false, error: "room" } as const;
     const all = await db.bookings.where("room").equals(i.room).toArray();
     if (findConflict(all, i.room, i.from, nights)) return { ok: false, error: "taken" } as const;
     const now = Date.now();
@@ -97,7 +97,7 @@ export async function moveBooking(id: string, room: string): Promise<Result> {
   return db.transaction("rw", db.bookings, db.rooms, db.audit, async () => {
     const b = await db.bookings.get(id);
     const r = await db.rooms.get(room);
-    if (!b || !r || r.st === "out") return { ok: false, error: "room" } as const;
+    if (!b || !r || r.deleted || r.st === "out") return { ok: false, error: "room" } as const;
     const all = await db.bookings.where("room").equals(room).toArray();
     if (findConflict(all, room, b.from, b.nights, id)) return { ok: false, error: "taken" } as const;
     await db.bookings.update(id, { room, updatedAt: Date.now() });
@@ -113,4 +113,91 @@ const SAMPLE = [
 
 export async function loadSampleRooms() {
   await db.rooms.bulkPut(SAMPLE.map(([n, type, floor, beds, price]) => ({ n, type, floor, beds, price, st: "free" as const })));
+}
+
+const isNum = (x: unknown) => typeof x === "number" && Number.isFinite(x);
+
+/** Add one room, or bring back a deleted room with the same number. */
+export async function addRoom(r: { n: string; type: string; floor: number; beds: number; price: number }): Promise<Result> {
+  const n = r.n.trim();
+  if (!n || n.length > 12 || !isNum(r.price)) return { ok: false, error: "name" };
+  return db.transaction("rw", db.rooms, async () => {
+    const ex = await db.rooms.get(n);
+    if (ex && !ex.deleted) return { ok: false, error: "taken" } as const;
+    await db.rooms.put({ n, type: r.type, floor: r.floor || 1, beds: r.beds || 1, price: Math.max(0, Math.round(r.price)), st: "free", deleted: false });
+    return { ok: true, value: undefined } as const;
+  });
+}
+
+/** Add many rooms at once, like 101 to 110. Numbers that already exist are skipped. */
+export async function addRoomRange(from: number, to: number, base: { type: string; floor: number; beds: number; price: number }): Promise<number> {
+  if (!Number.isInteger(from) || !Number.isInteger(to) || to < from || to - from > 199) return 0;
+  let made = 0;
+  for (let n = from; n <= to; n++) if ((await addRoom({ n: String(n), ...base })).ok) made++;
+  return made;
+}
+
+/**
+ * Deleting a room never erases anything: it is hidden, so old bookings and bills still make sense.
+ * A room that has a booking or a guest cannot be deleted.
+ */
+export async function deleteRoom(n: string): Promise<Result> {
+  return db.transaction("rw", db.rooms, db.bookings, db.audit, async () => {
+    const r = await db.rooms.get(n);
+    if (!r || r.deleted) return { ok: false, error: "room" } as const;
+    const all = await db.bookings.where("room").equals(n).toArray();
+    if (all.some(isActive)) return { ok: false, error: "inuse" } as const;
+    await db.rooms.update(n, { deleted: true });
+    await logAudit("room deleted", `room ${n} (${r.type}, Rs ${r.price})`);
+    return { ok: true, value: undefined } as const;
+  });
+}
+
+/**
+ * Change a booking: dates, nights, room, name, phone. A guest who is already in the room keeps the room and the arrival
+ * day (only the number of nights, name and phone can change, which is how a stay is extended).
+ */
+export async function editBooking(id: string, c: { room?: string; from?: string; nights?: number; guest?: string; phone?: string }): Promise<Result> {
+  return db.transaction("rw", db.bookings, db.rooms, db.audit, async () => {
+    const b = await db.bookings.get(id);
+    if (!b || !isActive(b)) return { ok: false, error: "state" } as const;
+    const inHouse = b.status === "occupied";
+    const room = inHouse ? b.room : (c.room ?? b.room);
+    const from = inHouse ? b.from : (c.from ?? b.from);
+    const nights = Math.floor(c.nights ?? b.nights);
+    const guest = (c.guest ?? b.guest).trim();
+    if (!guest) return { ok: false, error: "name" } as const;
+    if (from.length !== 10 || Number.isNaN(Date.parse(from + "T00:00:00Z")) || !(nights >= 1) || nights > 365) return { ok: false, error: "dates" } as const;
+    const r = await db.rooms.get(room);
+    if (!r || r.deleted || (r.st === "out" && room !== b.room)) return { ok: false, error: "room" } as const;
+    const others = await db.bookings.where("room").equals(room).toArray();
+    if (findConflict(others, room, from, nights, id)) return { ok: false, error: "taken" } as const;
+    await db.bookings.update(id, { room, from, nights, guest, phone: (c.phone ?? b.phone).trim(), updatedAt: Date.now() });
+    const was = `${b.room} ${b.from} ${b.nights}n`, now = `${room} ${from} ${nights}n`;
+    if (was !== now || guest !== b.guest) await logAudit("booking edited", `${b.guest}: ${was} -> ${guest !== b.guest ? guest + " " : ""}${now}`);
+    return { ok: true, value: undefined } as const;
+  });
+}
+
+/** The guest of a table paid at the table: the money goes into the day book. */
+export async function payOrderAtTable(orderId: string, method: OrderPay["method"]): Promise<Result> {
+  return db.transaction("rw", db.orders, async () => {
+    const o = await db.orders.get(orderId);
+    if (!o || o.billed) return { ok: false, error: "state" } as const;
+    const amount = o.items.reduce((s, l) => s + l.qty * l.price, 0);
+    await db.orders.update(orderId, { billed: true, paid: { method, amount, at: Date.now() } });
+    return { ok: true, value: undefined } as const;
+  });
+}
+
+/** An order that was not paid at the table goes onto a guest's room bill, to be paid at check-out. */
+export async function addOrderToBooking(orderId: string, bookingId: string): Promise<Result> {
+  return db.transaction("rw", db.orders, db.bookings, async () => {
+    const o = await db.orders.get(orderId);
+    const b = await db.bookings.get(bookingId);
+    if (!o || o.billed || !b || b.status !== "occupied") return { ok: false, error: "state" } as const;
+    await db.bookings.update(bookingId, { food: [...b.food, ...o.items], updatedAt: Date.now() });
+    await db.orders.update(orderId, { billed: true, done: true, to: "R" + bookingId });
+    return { ok: true, value: undefined } as const;
+  });
 }
