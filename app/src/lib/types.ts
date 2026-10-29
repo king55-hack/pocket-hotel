@@ -33,7 +33,7 @@ export type OrderPay = { method: "cash" | "qr" | "card"; amount: number; at: num
 export type Order = { updatedAt?: number; id: string; to: string; items: Line[]; done: boolean; billed: boolean; at: number; paid?: OrderPay };
 
 export type BillSettings = { vatInvoice: boolean; taxIncluded: boolean; svc: boolean; vat: number; svcPct: number; idPhoto: boolean };
-export type Features = { restaurant: boolean; housekeeping: boolean; sources: boolean; excel: boolean; email: boolean; publicLink: boolean; ical: boolean; shifts: boolean; attendance: boolean };
+export type Features = { restaurant: boolean; housekeeping: boolean; sources: boolean; excel: boolean; email: boolean; publicLink: boolean; ical: boolean; shifts: boolean; attendance: boolean; backup: boolean; smart: boolean };
 
 /** A kind of room (Single, Triple, Quad ...) that the owner defines: how many people fit and the usual price. */
 export type RoomCat = { id: string; name: string; cap: number; price: number };
@@ -42,7 +42,12 @@ export type DiscountCfg = { on: boolean; presets: number[]; maxPct: number };
 export type ShiftTpl = { id: string; name: string; start: string; end: string };
 /** One person's shift on one day. tpl is a ShiftTpl id, or "" for a day off. */
 export type Shift = { updatedAt?: number; id: string; uid: string; name: string; day: string; tpl: string };
-export type Punch = { in: number; out?: number };
+export type Break = { s: number; e?: number };
+export type Punch = { in: number; out?: number; breaks?: Break[] };
+export type PayMode = "monthly" | "daily" | "hourly";
+export type PayAdj = { month: string; bonus: number; deduct: number; note: string };
+/** What one person is paid. Only managers (and the person) ever receive this record. */
+export type PayRec = { updatedAt?: number; id: string; uid: string; name: string; mode: PayMode; rate: number; adj: PayAdj[] };
 export type Attendance = { updatedAt?: number; id: string; uid: string; name: string; day: string; punches: Punch[] };
 
 export type MenuItem = { id: string; name: string; price: number; cat: string };

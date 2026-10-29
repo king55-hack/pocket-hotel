@@ -26,3 +26,19 @@ export function validHotelExtras(h: Record<string, any>): boolean {
   if (h.shiftTpl !== undefined && !(Array.isArray(h.shiftTpl) && h.shiftTpl.length <= 12 && h.shiftTpl.every((s: any) => s && str(s.id, 64) && str(s.name, 30) && TIME.test(s.start) && TIME.test(s.end)))) return false;
   return true;
 }
+
+export const PAY_MODES = new Set(["monthly", "daily", "hourly"]);
+
+/** A person's pay record: how they are paid, the rate, and the bonus/deduction notes the manager typed per month. */
+export function validPay(p: Record<string, any>): boolean {
+  return typeof p.uid === "string" && p.uid.length > 0 && p.uid.length <= 64 && typeof p.name === "string" && p.name.length <= 80 && PAY_MODES.has(p.mode) && isMoney(p.rate) &&
+    Array.isArray(p.adj) && p.adj.length <= 36 &&
+    p.adj.every((a: any) => a && typeof a.month === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(a.month) && isMoney(a.bonus) && isMoney(a.deduct) && typeof a.note === "string" && a.note.length <= 100);
+}
+
+/** Times of one clock-in: when, when out, and the breaks in between. */
+export function validPunches(list: unknown): boolean {
+  return Array.isArray(list) && list.length <= 20 && list.every((p: any) =>
+    p && Number.isFinite(p.in) && (p.out === undefined || (Number.isFinite(p.out) && p.out >= p.in)) &&
+    (p.breaks === undefined || (Array.isArray(p.breaks) && p.breaks.length <= 12 && p.breaks.every((b: any) => b && Number.isFinite(b.s) && b.s >= p.in && (b.e === undefined || (Number.isFinite(b.e) && b.e >= b.s))))));
+}

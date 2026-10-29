@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { Attendance, Audit, Booking, Hotel, MenuItem, Order, Room, Shift } from "./lib/types";
+import type { Attendance, Audit, Booking, Hotel, MenuItem, Order, PayRec, Room, Shift } from "./lib/types";
 
 export type Meta = { k: string; v: unknown };
 
@@ -15,6 +15,7 @@ class HotelDB extends Dexie {
   meta!: Table<Meta, string>;
   shifts!: Table<Shift, string>;
   attendance!: Table<Attendance, string>;
+  pay!: Table<PayRec, string>;
   constructor(name = "pocket-hotel") {
     super(name);
     this.version(1).stores({
@@ -47,7 +48,18 @@ class HotelDB extends Dexie {
       shifts: "id, day, uid, updatedAt",
       attendance: "id, day, uid, updatedAt",
     });
-    for (const t of [this.rooms, this.bookings, this.orders, this.hotel, this.shifts, this.attendance] as Table<{ updatedAt?: number }, string>[]) {
+    // Version 4: pay (salary settings).
+    this.version(4).stores({
+      rooms: "n, updatedAt",
+      bookings: "id, room, from, status, updatedAt",
+      orders: "id, at, updatedAt",
+      hotel: "id, updatedAt",
+      meta: "k",
+      shifts: "id, day, uid, updatedAt",
+      attendance: "id, day, uid, updatedAt",
+      pay: "id, updatedAt",
+    });
+    for (const t of [this.rooms, this.bookings, this.orders, this.hotel, this.shifts, this.attendance, this.pay] as Table<{ updatedAt?: number }, string>[]) {
       // Stamp every local edit. Records applied from the server skip this (the transaction is marked).
       t.hook("creating", function (_k, obj) {
         if (inSyncTx()) return;
@@ -81,7 +93,7 @@ export const DEFAULT_HOTEL: Hotel = {
   address: "",
   lang: "ne",
   bill: { vatInvoice: true, taxIncluded: true, svc: true, vat: 13, svcPct: 10, idPhoto: false },
-  feat: { restaurant: true, housekeeping: true, sources: true, excel: true, email: false, publicLink: false, ical: false, shifts: true, attendance: false },
+  feat: { restaurant: true, housekeeping: true, sources: true, excel: true, email: false, publicLink: false, ical: false, shifts: true, attendance: false, backup: false, smart: false },
   sources: ["Phone", "Walk-in", "WhatsApp", "Booking.com"],
   invoiceSeq: 0,
   receiptSeq: 0,
@@ -108,8 +120,8 @@ export const setMeta = (k: string, v: unknown) => db.meta.put({ k, v });
 
 /** Wipe everything on this device (used when a different hotel or person signs in). */
 export async function wipeAll() {
-  await db.transaction("rw", [db.rooms, db.bookings, db.orders, db.hotel, db.audit, db.meta, db.shifts, db.attendance], async () => {
-    await Promise.all([db.rooms.clear(), db.bookings.clear(), db.orders.clear(), db.hotel.clear(), db.audit.clear(), db.meta.clear(), db.shifts.clear(), db.attendance.clear()]);
+  await db.transaction("rw", [db.rooms, db.bookings, db.orders, db.hotel, db.audit, db.meta, db.shifts, db.attendance, db.pay], async () => {
+    await Promise.all([db.rooms.clear(), db.bookings.clear(), db.orders.clear(), db.hotel.clear(), db.audit.clear(), db.meta.clear(), db.shifts.clear(), db.attendance.clear(), db.pay.clear()]);
   });
 }
 

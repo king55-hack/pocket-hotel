@@ -1,5 +1,5 @@
 import { db } from "./db";
-import type { Attendance, Shift, ShiftTpl } from "./lib/types";
+import type { Attendance, Break, Shift, ShiftTpl } from "./lib/types";
 import { addDays, todayISO } from "./lib/dates";
 
 export const shiftId = (uid: string, day: string) => `${uid}:${day}`;
@@ -54,7 +54,9 @@ export async function clockOut(uid: string, now = Date.now()): Promise<"ok" | "n
   return db.transaction("rw", db.attendance, async () => {
     const o = await openPunch(uid, now);
     if (!o) return "none";
-    await db.attendance.put({ ...o.rec, punches: o.rec.punches.map((p) => (p === o.punch ? { ...p, out: now } : p)) });
+    // leaving ends a break that is still open
+    const breaks = o.punch.breaks?.map((b) => (b.e === undefined ? { ...b, e: now } : b));
+    await db.attendance.put({ ...o.rec, punches: o.rec.punches.map((p) => (p === o.punch ? { ...p, out: now, ...(breaks ? { breaks } : {}) } : p)) });
     return "ok";
   });
 }
@@ -69,7 +71,29 @@ export async function openPunch(uid: string, now = Date.now()): Promise<{ rec: A
   return undefined;
 }
 
-export const workedMs = (a: Attendance, now = Date.now()) => a.punches.reduce((s, p) => s + clamp((p.out ?? now) - p.in), 0);
+const breakMs = (bs: Break[] | undefined, now: number) => (bs ?? []).reduce((s, b) => s + clamp((b.e ?? now) - b.s), 0);
+/** Time at work with the breaks taken off. */
+export const workedMs = (a: Attendance, now = Date.now()) => a.punches.reduce((s, p) => s + clamp(clamp((p.out ?? now) - p.in) - breakMs(p.breaks, now)), 0);
+export const breaksMs = (a: Attendance, now = Date.now()) => a.punches.reduce((s, p) => s + breakMs(p.breaks, now), 0);
+
+/** Start a break (tea, lunch). Only while clocked in, and one at a time. */
+export async function startBreak(uid: string, now = Date.now()): Promise<"ok" | "none" | "already"> {
+  return db.transaction("rw", db.attendance, async () => {
+    const o = await openPunch(uid, now);
+    if (!o) return "none";
+    if (o.punch.breaks?.some((b) => b.e === undefined)) return "already";
+    await db.attendance.put({ ...o.rec, punches: o.rec.punches.map((p) => (p === o.punch ? { ...p, breaks: [...(p.breaks ?? []), { s: now }] } : p)) });
+    return "ok";
+  });
+}
+export async function endBreak(uid: string, now = Date.now()): Promise<"ok" | "none"> {
+  return db.transaction("rw", db.attendance, async () => {
+    const o = await openPunch(uid, now);
+    if (!o || !o.punch.breaks?.some((b) => b.e === undefined)) return "none";
+    await db.attendance.put({ ...o.rec, punches: o.rec.punches.map((p) => (p === o.punch ? { ...p, breaks: p.breaks!.map((b) => (b.e === undefined ? { ...b, e: now } : b)) } : p)) });
+    return "ok";
+  });
+}
 
 export function hm(ms: number): string {
   const m = Math.round(ms / 60000);

@@ -18,7 +18,7 @@ export const ROLE_DEFAULTS: Record<Role, Perm[]> = {
 export const isPerm = (p: unknown): p is Perm => typeof p === "string" && (PERMS as readonly string[]).includes(p);
 export const isRole = (r: unknown): r is Role => typeof r === "string" && (ROLES as readonly string[]).includes(r);
 
-export const DEFAULT_FEATURES = { restaurant: true, housekeeping: true, sources: true, excel: true, email: false, publicLink: false, ical: false, shifts: true, attendance: false };
+export const DEFAULT_FEATURES = { restaurant: true, housekeeping: true, sources: true, excel: true, email: false, publicLink: false, ical: false, shifts: true, attendance: false, backup: false, smart: false };
 export const FEATURE_KEYS = Object.keys(DEFAULT_FEATURES) as (keyof typeof DEFAULT_FEATURES)[];
 
 /** Owner always has everything, whatever is stored. */

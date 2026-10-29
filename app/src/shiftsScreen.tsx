@@ -6,13 +6,14 @@ import { addDays, shortDay, todayISO } from "./lib/dates";
 import { tplOf } from "./lib/policy";
 import type { Attendance, Shift } from "./lib/types";
 import type { P } from "./screens";
-import { clock, clockIn, clockOut, copyWeek, hm, lateBy, openPunch, setShift, shiftId, workedMs } from "./shifts";
+import { breaksMs, clock, clockIn, clockOut, copyWeek, endBreak, hm, lateBy, openPunch, setShift, shiftId, startBreak, workedMs } from "./shifts";
+import { PayrollCard, SmartCard } from "./payrollCard";
 
 type Person = { id: string; name: string; active: boolean };
 const DAYNAMES = { ne: ["आइत", "सोम", "मंगल", "बुध", "बिही", "शुक्र", "शनि"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
 const dow = (iso: string) => new Date(iso + "T00:00:00").getDay();
 
-export function Shifts({ h, L, session, can }: P) {
+export function Shifts({ h, L, session, can, rooms, bookings }: P) {
   const ne = L === "ne";
   const t = (n: string, e: string) => (ne ? n : e);
   const today = todayISO();
@@ -24,7 +25,7 @@ export function Shifts({ h, L, session, can }: P) {
   const manage = can("staff.manage");
   const shifts = useLiveQuery(() => db.shifts.toArray(), [], [] as Shift[]);
   const att = useLiveQuery(() => db.attendance.toArray(), [], [] as Attendance[]);
-  const [open, setOpen] = useState<{ since: number } | null>(null);
+  const [open, setOpen] = useState<{ since: number; brk: boolean } | null>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export function Shifts({ h, L, session, can }: P) {
   }, [manage]);
   useEffect(() => {
     if (!me) return;
-    void openPunch(me.id).then((o) => setOpen(o ? { since: o.punch.in } : null));
+    void openPunch(me.id).then((o) => setOpen(o ? { since: o.punch.in, brk: !!o.punch.breaks?.some((b) => b.e === undefined) } : null));
   }, [me, att]);
   useEffect(() => { const i = setInterval(() => setTick((x) => x + 1), 30_000); return () => clearInterval(i); }, []);
 
@@ -64,13 +65,17 @@ export function Shifts({ h, L, session, can }: P) {
       {h.feat.attendance && (
         <div className="card"><h2>{t("हाजिरी", "Attendance")}</h2>
           {open
-            ? <div className="note"><b>{t("काममा हुनुहुन्छ", "You are clocked in")}</b><br />{t("सुरु", "Since")} {clock(open.since)} · {hm(Date.now() - open.since)}</div>
+            ? <div className="note"><b>{open.brk ? t("ब्रेकमा हुनुहुन्छ ☕", "You are on a break ☕") : t("काममा हुनुहुन्छ", "You are clocked in")}</b><br />{t("सुरु", "Since")} {clock(open.since)} · {hm(Date.now() - open.since)}</div>
             : <p style={{ color: "var(--mute)" }}>{t("अहिले तपाईं काममा हुनुहुन्न।", "You are not clocked in.")}</p>}
+          {open && (open.brk
+            ? <button className="btn" onClick={() => void endBreak(me.id)}>{t("ब्रेक सकियो (काममा फर्कें)", "Back from break")}</button>
+            : <button className="btn alt" onClick={() => void startBreak(me.id)}>{t("ब्रेक सुरु ☕", "Start break ☕")}</button>)}
           {open
             ? <button className="btn bad" onClick={async () => { await clockOut(me.id); setMsg(""); }}>{t("काम सकियो (लगआउट)", "Clock out")}</button>
             : <button className="btn" onClick={async () => { const r = await clockIn({ uid: me.id, name: me.name }); setMsg(r === "already" ? t("पहिल्यै काममा हुनुहुन्छ।", "Already clocked in.") : ""); }}>{t("काम सुरु (लगइन)", "Clock in")}</button>}
           {msg && <div className="warn" role="alert">{msg}</div>}
-          {mine && mine.punches.map((p, i) => <div className="item" key={i}><span>{clock(p.in)} → {p.out ? clock(p.out) : "…"}</span><span>{hm((p.out ?? Date.now()) - p.in)}</span></div>)}
+          {mine && mine.punches.map((p, i) => <div className="item" key={i}><span>{clock(p.in)} → {p.out ? clock(p.out) : "…"}{p.breaks?.length ? ` · ☕ ${p.breaks.length}` : ""}</span><span>{hm(workedMs({ ...mine, punches: [p] }))}</span></div>)}
+          {mine && breaksMs(mine) > 0 && <small style={{ color: "var(--mute)" }}>{t("ब्रेक", "Breaks")}: {hm(breaksMs(mine))} ({t("तलबमा गनिँदैन", "not paid")})</small>}
         </div>)}
 
       <div className="card"><h2>{t("आज ड्युटीमा", "On duty today")}</h2>
@@ -106,6 +111,8 @@ export function Shifts({ h, L, session, can }: P) {
             {msg && <div className="note" role="status">{msg}</div>}
           </div>
 
+          {h.feat.attendance && <PayrollCard L={L} h={h} people={people} att={att} shifts={shifts} />}
+          {h.feat.smart && <SmartCard L={L} rooms={rooms} bookings={bookings} shifts={shifts} />}
           {h.feat.attendance && (
             <div className="card"><h2>{t("हाजिरी रिपोर्ट", "Attendance report")}</h2>
               <p style={{ fontSize: 14, color: "var(--mute)", margin: "0 0 6px" }}>{shortDay(days[0])} – {shortDay(days[6])}</p>

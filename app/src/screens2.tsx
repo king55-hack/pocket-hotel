@@ -218,7 +218,7 @@ export function AccountCard({ L, session, onOut }: { L: Lang; session: Session; 
 }
 
 /* ---------- the seller's admin page (#/admin) ---------- */
-const FEATS: [string, string, string][] = [["restaurant", "Restaurant", "रेस्टुरेन्ट"], ["housekeeping", "Housekeeping", "सफाई"], ["sources", "Own booking sources", "आफ्ना बुकिङ स्रोत"], ["excel", "Excel export", "एक्सेल"], ["email", "Email bills", "इमेल बिल"], ["publicLink", "Book-here link (later)", "बुक लिङ्क (पछि)"], ["ical", "Calendar sync (later)", "क्यालेन्डर (पछि)"], ["shifts", "Staff shifts", "स्टाफ सिफ्ट"], ["attendance", "Clock in/out (premium)", "हाजिरी (प्रिमियम)"]];
+const FEATS: [string, string, string][] = [["restaurant", "Restaurant", "रेस्टुरेन्ट"], ["housekeeping", "Housekeeping", "सफाई"], ["sources", "Own booking sources", "आफ्ना बुकिङ स्रोत"], ["excel", "Excel export", "एक्सेल"], ["email", "Email bills", "इमेल बिल"], ["publicLink", "Book-here link (later)", "बुक लिङ्क (पछि)"], ["ical", "Calendar sync (later)", "क्यालेन्डर (पछि)"], ["shifts", "Staff shifts", "स्टाफ सिफ्ट"], ["attendance", "Clock in/out + salary (premium)", "हाजिरी र तलब (प्रिमियम)"], ["backup", "Backup / restore (premium)", "ब्याकअप (प्रिमियम)"], ["smart", "Smart staff suggestion (premium)", "स्मार्ट सुझाव (प्रिमियम)"]];
 
 export function AdminPage({ L, setLang }: { L: Lang; setLang: () => void }) {
   const ne = L === "ne";

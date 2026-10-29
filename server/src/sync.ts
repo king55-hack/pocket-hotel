@@ -1,12 +1,12 @@
 import { Hono } from "hono";
 import type { App } from "./util";
 import { featOf, permsOf, type Perm } from "./perms";
-import { MAX_EXTRA_BEDS, MAX_PERSONS, capOf, isMoney, validHotelExtras } from "./policy";
+import { MAX_EXTRA_BEDS, MAX_PERSONS, capOf, isMoney, validHotelExtras, validPay, validPunches } from "./policy";
 import { overlaps, validDate } from "./overlap";
 
 export const sync = new Hono<App>();
 
-const TABLES = new Set(["rooms", "bookings", "orders", "hotel", "shifts", "attendance"]);
+const TABLES = new Set(["rooms", "bookings", "orders", "hotel", "shifts", "attendance", "pay"]);
 const MAX_BATCH = 100;
 const MAX_RECORD = 64 * 1024;
 const TERMINAL = new Set(["done", "cancelled", "noshow"]);
@@ -27,13 +27,12 @@ function validMenu(m: unknown): boolean {
 }
 
 /** What a change needs, worked out by comparing it with what the server already has. Returns null when it is not allowed at all. */
-export function needed(t: string, old: Row | null, nu: Row): { all: Perm[]; any?: Perm[] } | null {
+export function needed(t: string, old: Row | null, nu: Row, restore = false): { all: Perm[]; any?: Perm[] } | null {
   if (t === "hotel") return validMenu(nu.menu) && validHotelExtras(nu) ? { all: ["settings.edit"] } : null;
-  if (t === "shifts") return typeof nu.uid === "string" && nu.uid && validDate(nu.day) && typeof nu.tpl === "string" && nu.tpl.length <= 64 && nu.id === `${nu.uid}:${nu.day}` ? { all: ["staff.manage"] } : null;
+  if (t === "shifts") return typeof nu.uid === "string" && nu.uid && validDate(nu.day) && typeof nu.tpl === "string" && nu.tpl.length <= 64 && (nu.name === undefined || (typeof nu.name === "string" && nu.name.length <= 80)) && nu.id === `${nu.uid}:${nu.day}` ? { all: ["staff.manage"] } : null;
+  if (t === "pay") return validPay(nu) && nu.id === nu.uid ? { all: ["staff.manage"] } : null;
   if (t === "attendance")
-    return typeof nu.uid === "string" && nu.uid && validDate(nu.day) && nu.id === `${nu.uid}:${nu.day}` && Array.isArray(nu.punches) && nu.punches.length <= 20 && nu.punches.every((p: any) => p && Number.isFinite(p.in) && (p.out === undefined || (Number.isFinite(p.out) && p.out >= p.in)))
-      ? { all: [] }
-      : null;
+    return typeof nu.uid === "string" && nu.uid && (nu.name === undefined || (typeof nu.name === "string" && nu.name.length <= 80)) && validDate(nu.day) && nu.id === `${nu.uid}:${nu.day}` && validPunches(nu.punches) ? { all: [] } : null;
   if (t === "orders") return { all: ["restaurant"] };
   if (t === "rooms") {
     if (typeof nu.n !== "string" || !nu.n) return null;
@@ -61,11 +60,11 @@ export function needed(t: string, old: Row | null, nu: Row): { all: Perm[]; any?
     const any: Perm[] = [];
     if (typeof nu.discount === "number" && nu.discount > 0 && nu.discount !== old?.discount) all.push("discount");
     // a booking cannot start on a day that was already over when it was made or moved
-    if (!old && typeof nu.createdAt === "number" && nu.from < dayOf(nu.createdAt, -1)) return null;
+    if (!restore && !old && typeof nu.createdAt === "number" && nu.from < dayOf(nu.createdAt, -1)) return null;
     if (old && old.from !== nu.from && old.status === "booked" && nu.status === "booked" && typeof nu.updatedAt === "number" && nu.from < dayOf(nu.updatedAt, -1)) return null;
     if (!old) {
       all.push("booking.create");
-      if (nu.status !== "booked") return null; // a booking must start as "booked"
+      if (nu.status !== "booked" && !restore) return null; // a booking must start as "booked" (a backup restore may bring back finished ones)
       return { all };
     }
     if (old.status !== nu.status) {
@@ -109,7 +108,9 @@ sync.post("/push", async (c) => {
     const cur = await c.env.DB.prepare("SELECT data,updated_at FROM records WHERE hotel_id=? AND tbl=? AND id=?").bind(hotel, ch.t, ch.id).first<{ data: string; updated_at: number }>();
     const old: Row | null = cur ? JSON.parse(cur.data) : null;
     const reject = (reason: string) => {
-      rejected.push({ t: ch.t, id: ch.id, reason, server: old ? stripFor(ch.t, old, perms) : null });
+      // somebody else's pay is never sent back, not even inside a refusal
+      const hide = ch.t === "pay" && !perms.has("staff.manage") && old?.uid !== user.id;
+      rejected.push({ t: ch.t, id: ch.id, reason, server: old && !hide ? stripFor(ch.t, old, perms) : null });
     };
     const data: Row = { ...ch.data };
     if (ch.t === "hotel") {
@@ -119,18 +120,20 @@ sync.post("/push", async (c) => {
     if (ch.t === "bookings" && old && !perms.has("money.view")) data.payments = old.payments; // this person cannot see or change money
     if (ch.t === "bookings" && !old && !perms.has("money.view")) data.payments = [];
     if (ch.t === "orders" && !feat.restaurant) { reject("feature_off"); continue; }
-    if ((ch.t === "shifts" || ch.t === "attendance") && data.id !== ch.id) { reject("invalid"); continue; } // the record key must be the person and the day
-    if ((ch.t === "shifts" && !feat.shifts) || (ch.t === "attendance" && !feat.attendance)) { reject("feature_off"); continue; }
+    if ((ch.t === "shifts" || ch.t === "attendance" || ch.t === "pay") && data.id !== ch.id) { reject("invalid"); continue; } // the record key must be the person and the day
+    if ((ch.t === "shifts" && !feat.shifts) || ((ch.t === "attendance" || ch.t === "pay") && !feat.attendance)) { reject("feature_off"); continue; }
     if (ch.t === "attendance") {
       // clocking in is for oneself. Only a manager writes another person's times, and nobody rewrites what was already recorded.
       const mgr = perms.has("staff.manage");
       const punches: any[] = Array.isArray(data.punches) ? data.punches : [];
       const before: any[] = old?.punches ?? [];
-      const kept = before.every((p, i) => punches[i] && punches[i].in === p.in && (p.out === undefined || punches[i].out === p.out));
+      const kept = before.every((p, i) => punches[i] && punches[i].in === p.in && (p.out === undefined || punches[i].out === p.out) && (p.breaks ?? []).every((b: any, k: number) => punches[i].breaks?.[k] && punches[i].breaks[k].s === b.s && (b.e === undefined || punches[i].breaks[k].e === b.e)));
       const fresh = punches.slice(before.length).every((p) => p.in <= Date.now() + 5 * 60_000 && p.in >= Date.now() - 7 * 86400000);
       if (!mgr && !(data.uid === user.id && kept && fresh)) { reject("forbidden"); continue; }
     }
-    const need = needed(ch.t, old, data);
+    // the owner may bring back finished and past bookings from a backup, if the hotel has the backup feature
+    const restore = ch.t === "bookings" && feat.backup === true && perms.has("delete");
+    const need = needed(ch.t, old, data, restore);
     if (!need) { reject("invalid"); continue; }
     if (ch.t === "bookings") {
       const why = await bookingLimits(c.env.DB, hotel, old, data, perms);
@@ -230,11 +233,14 @@ sync.get("/pull", async (c) => {
   const perms = permsOf(c.get("user"));
   const r = await c.env.DB.prepare("SELECT tbl,id,data,updated_at,seq FROM records WHERE hotel_id=? AND seq>? ORDER BY seq LIMIT ?").bind(c.get("hotel"), since, limit + 1).all<any>();
   const more = r.results.length > limit;
-  const rows = more ? r.results.slice(0, limit) : r.results;
+  const all = more ? r.results.slice(0, limit) : r.results;
+  // salary rows go only to managers and to the person they are about
+  const mgr = perms.has("staff.manage"), me = c.get("user").id;
+  const rows = all.filter((x) => x.tbl !== "pay" || mgr || x.id === me);
   const h = await c.env.DB.prepare("SELECT name,plan,feat FROM hotels WHERE id=?").bind(c.get("hotel")).first<any>();
   return c.json({
     changes: rows.map((x) => ({ t: x.tbl, id: x.id, data: stripFor(x.tbl, JSON.parse(x.data), perms), ts: x.updated_at, seq: x.seq })),
-    next: rows.length ? rows[rows.length - 1].seq : since,
+    next: all.length ? all[all.length - 1].seq : since,
     more,
     hotel: { name: h.name, plan: h.plan, feat: featOf(h.feat) },
   });

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { addOrderToBooking, addToRoomBill, checkOut, createBooking, loadSampleRooms, moveBooking, payOrderAtTable, type Result } from "./actions";
 import { MenuCard, PrinterCard, RoomsCard } from "./settingsCards";
 import { CategoriesCard, RulesCard, ShiftSetupCard } from "./settingsCards2";
+import { BackupCard } from "./backupCard";
 import { BillActions } from "./BillActions";
 import { db, STARTER_MENU, uid } from "./db";
 import { calcBill, sumLines } from "./lib/bill";
@@ -12,6 +13,7 @@ import type { Booking, Hotel, Line, Order, Room } from "./lib/types";
 import { tr, type Key, type Lang } from "./i18n";
 import { api, type Session } from "./api";
 import { AccountCard, LocalCard } from "./screens2";
+import { csvFile } from "./csv";
 
 export type Tab = "rooms" | "book" | "stay" | "food" | "bill" | "money" | "clean" | "set" | "staff" | "report" | "shifts";
 export type P = {
@@ -289,9 +291,7 @@ export function BillScreen({ h, L, rooms, bookings, orders, sel, session, can }:
   );
 }
 
-function csv(rows: (string | number)[][]) {
-  return "﻿" + rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
-}
+const csv = csvFile;
 
 export function Money({ h, L, bookings, orders }: P) {
   const t = useT(L);
@@ -399,6 +399,7 @@ export function SettingsScreen({ h, L, rooms, can, session, onOut }: P) {
       {can("settings.edit") && <RulesCard L={L} h={h} />}
       {can("settings.edit") && h.feat.shifts && !!session && <ShiftSetupCard L={L} h={h} />}
       {can("settings.edit") && h.feat.restaurant && <MenuCard L={L} h={h} />}
+      {h.feat.backup && !!session && can("delete") && <BackupCard L={L} withPay={can("staff.manage")} />}
       <PrinterCard L={L} />
       {h.feat.sources && can("settings.edit") ? (
         <div className="card"><h2>{t("sources")}</h2>

@@ -12,6 +12,7 @@ const TABLES: [string, Table<any, string>, (r: Rec) => string][] = [
   ["hotel", db.hotel, () => "main"],
   ["shifts", db.shifts, (r) => r.id],
   ["attendance", db.attendance, (r) => r.id],
+  ["pay", db.pay, (r) => r.id],
 ];
 const byName = new Map(TABLES.map((t) => [t[0], t]));
 
@@ -99,7 +100,7 @@ async function pull(): Promise<boolean> {
     const r = await api(`/sync/pull?since=${since}`, "GET");
     if (r.s !== 200) return fail(r.s, r.j?.error);
     if (r.j.changes.length) lastChanged = true;
-    await db.transaction("rw", [db.rooms, db.bookings, db.orders, db.hotel, db.shifts, db.attendance, db.meta], async (tx) => {
+    await db.transaction("rw", [db.rooms, db.bookings, db.orders, db.hotel, db.shifts, db.attendance, db.pay, db.meta], async (tx) => {
       (tx as any)._sync = true;
       for (const ch of r.j.changes as { t: string; id: string; data: Rec; ts: number }[]) {
         const tbl = byName.get(ch.t);
