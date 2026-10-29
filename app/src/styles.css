@@ -86,3 +86,6 @@ header.top{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-in
 
 td.cl{background:var(--clean);font-size:18px;cursor:pointer}
 td.past{background:var(--line);color:var(--mute)}
+
+/* a button that cannot be used yet must look that way */
+.btn:disabled{opacity:.45}

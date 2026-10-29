@@ -1,11 +1,12 @@
 import { Hono } from "hono";
 import type { App } from "./util";
-import { permsOf, type Perm } from "./perms";
+import { featOf, permsOf, type Perm } from "./perms";
+import { MAX_EXTRA_BEDS, MAX_PERSONS, capOf, isMoney, validHotelExtras } from "./policy";
 import { overlaps, validDate } from "./overlap";
 
 export const sync = new Hono<App>();
 
-const TABLES = new Set(["rooms", "bookings", "orders", "hotel"]);
+const TABLES = new Set(["rooms", "bookings", "orders", "hotel", "shifts", "attendance"]);
 const MAX_BATCH = 100;
 const MAX_RECORD = 64 * 1024;
 const TERMINAL = new Set(["done", "cancelled", "noshow"]);
@@ -27,10 +28,17 @@ function validMenu(m: unknown): boolean {
 
 /** What a change needs, worked out by comparing it with what the server already has. Returns null when it is not allowed at all. */
 export function needed(t: string, old: Row | null, nu: Row): { all: Perm[]; any?: Perm[] } | null {
-  if (t === "hotel") return validMenu(nu.menu) ? { all: ["settings.edit"] } : null;
+  if (t === "hotel") return validMenu(nu.menu) && validHotelExtras(nu) ? { all: ["settings.edit"] } : null;
+  if (t === "shifts") return typeof nu.uid === "string" && nu.uid && validDate(nu.day) && typeof nu.tpl === "string" && nu.tpl.length <= 64 && nu.id === `${nu.uid}:${nu.day}` ? { all: ["staff.manage"] } : null;
+  if (t === "attendance")
+    return typeof nu.uid === "string" && nu.uid && validDate(nu.day) && nu.id === `${nu.uid}:${nu.day}` && Array.isArray(nu.punches) && nu.punches.length <= 20 && nu.punches.every((p: any) => p && Number.isFinite(p.in) && (p.out === undefined || (Number.isFinite(p.out) && p.out >= p.in)))
+      ? { all: [] }
+      : null;
   if (t === "orders") return { all: ["restaurant"] };
   if (t === "rooms") {
     if (typeof nu.n !== "string" || !nu.n) return null;
+    if (nu.cap !== undefined && !(Number.isInteger(nu.cap) && nu.cap >= 1 && nu.cap <= MAX_PERSONS)) return null;
+    if (nu.price !== undefined && !isMoney(nu.price)) return null;
     if (!old) return { all: ["rooms.manage"] };
     const all: Perm[] = [];
     const any: Perm[] = [];
@@ -41,11 +49,14 @@ export function needed(t: string, old: Row | null, nu: Row): { all: Perm[]; any?
       else if (nu.st === "clean") any.push("checkout", "housekeeping", "rooms.manage");
       else all.push("rooms.manage");
     }
-    if (old.type !== nu.type || old.floor !== nu.floor || old.beds !== nu.beds || !!old.deleted !== !!nu.deleted) all.push("rooms.manage");
+    if (old.type !== nu.type || old.floor !== nu.floor || old.beds !== nu.beds || old.cap !== nu.cap || !!old.deleted !== !!nu.deleted) all.push("rooms.manage");
     return { all, any: any.length ? any : undefined };
   }
   if (t === "bookings") {
     if (!BOOKING_STATUS.has(nu.status) || !validDate(nu.from) || !Number.isInteger(nu.nights) || nu.nights < 1 || nu.nights > 365 || typeof nu.room !== "string") return null;
+    for (const k of ["extra", "discount", "rate"]) if (nu[k] !== undefined && !isMoney(nu[k])) return null;
+    if (nu.persons !== undefined && !(Number.isInteger(nu.persons) && nu.persons >= 1 && nu.persons <= MAX_PERSONS)) return null;
+    if (nu.payments !== undefined && (!Array.isArray(nu.payments) || nu.payments.length > 60 || !nu.payments.every((p: any) => p && isMoney(p.amount)))) return null;
     const all: Perm[] = [];
     const any: Perm[] = [];
     if (typeof nu.discount === "number" && nu.discount > 0 && nu.discount !== old?.discount) all.push("discount");
@@ -83,7 +94,7 @@ sync.post("/push", async (c) => {
   if (!Array.isArray(list) || list.length === 0 || list.length > MAX_BATCH) return c.json({ error: "invalid" }, 400);
   const hotel = c.get("hotel"), dev = c.get("dev"), user = c.get("user");
   const perms = permsOf(user);
-  const feat = JSON.parse((await c.env.DB.prepare("SELECT feat FROM hotels WHERE id=?").bind(hotel).first<{ feat: string }>())!.feat);
+  const feat = featOf((await c.env.DB.prepare("SELECT feat FROM hotels WHERE id=?").bind(hotel).first<{ feat: string }>())!.feat);
 
   const accepted: string[] = [];
   const rejected: { t: string; id: string; reason: string; server: Row | null }[] = [];
@@ -108,8 +119,23 @@ sync.post("/push", async (c) => {
     if (ch.t === "bookings" && old && !perms.has("money.view")) data.payments = old.payments; // this person cannot see or change money
     if (ch.t === "bookings" && !old && !perms.has("money.view")) data.payments = [];
     if (ch.t === "orders" && !feat.restaurant) { reject("feature_off"); continue; }
+    if ((ch.t === "shifts" || ch.t === "attendance") && data.id !== ch.id) { reject("invalid"); continue; } // the record key must be the person and the day
+    if ((ch.t === "shifts" && !feat.shifts) || (ch.t === "attendance" && !feat.attendance)) { reject("feature_off"); continue; }
+    if (ch.t === "attendance") {
+      // clocking in is for oneself. Only a manager writes another person's times, and nobody rewrites what was already recorded.
+      const mgr = perms.has("staff.manage");
+      const punches: any[] = Array.isArray(data.punches) ? data.punches : [];
+      const before: any[] = old?.punches ?? [];
+      const kept = before.every((p, i) => punches[i] && punches[i].in === p.in && (p.out === undefined || punches[i].out === p.out));
+      const fresh = punches.slice(before.length).every((p) => p.in <= Date.now() + 5 * 60_000 && p.in >= Date.now() - 7 * 86400000);
+      if (!mgr && !(data.uid === user.id && kept && fresh)) { reject("forbidden"); continue; }
+    }
     const need = needed(ch.t, old, data);
     if (!need) { reject("invalid"); continue; }
+    if (ch.t === "bookings") {
+      const why = await bookingLimits(c.env.DB, hotel, old, data, perms);
+      if (why) { reject(why); continue; }
+    }
     if (ch.t === "rooms" && data.deleted && !old?.deleted) {
       // a room with a booking or a guest cannot be deleted, whatever the phone says
       const live = await c.env.DB.prepare("SELECT 1 AS x FROM records WHERE hotel_id=? AND tbl='bookings' AND json_extract(data,'$.room')=? AND json_extract(data,'$.status') IN ('booked','occupied') LIMIT 1").bind(hotel, data.n).first();
@@ -163,6 +189,36 @@ sync.post("/push", async (c) => {
   return c.json({ ok: true, accepted, rejected });
 });
 
+/** Rules that need the room and the hotel settings: how many people fit, what price may be agreed, how big a discount may be. */
+async function bookingLimits(DB: D1Database, hotel: string, old: Row | null, nu: Row, perms: Set<Perm>): Promise<string | null> {
+  const get = async (tbl: string, id: string) => {
+    const x = await DB.prepare("SELECT data FROM records WHERE hotel_id=? AND tbl=? AND id=?").bind(hotel, tbl, id).first<{ data: string }>();
+    return x ? (JSON.parse(x.data) as Row) : null;
+  };
+  const peopleChanged = !old || !same(old.info, nu.info) || old.persons !== nu.persons;
+  const rateChanged = nu.rate !== undefined && nu.rate !== old?.rate;
+  const discChanged = typeof nu.discount === "number" && nu.discount > 0 && nu.discount !== old?.discount;
+  if (!peopleChanged && !rateChanged && !discChanged) return null;
+  const room = await get("rooms", nu.room);
+  if (!room) return null;
+  const h = (await get("hotel", "main")) ?? {};
+  if (peopleChanged) {
+    const n = nu.info?.persons ?? nu.persons;
+    const extra = nu.info ? Math.min(MAX_EXTRA_BEDS, Math.max(0, Number(nu.info.extraBeds) || 0)) : MAX_EXTRA_BEDS;
+    if (typeof n === "number" && n > capOf(room, h.cats) + extra) return "too_many_people";
+  }
+  // a price other than the room's own price needs the right to change prices (or to give discounts)
+  if (rateChanged && nu.rate !== room.price && !(perms.has("prices.edit") || perms.has("discount"))) return "forbidden";
+  if (discChanged) {
+    const food = Array.isArray(nu.food) ? nu.food.reduce((a: number, l: any) => a + (Number(l?.qty) || 0) * (Number(l?.price) || 0), 0) : 0;
+    const sub = (nu.rate ?? room.price) * nu.nights + food + (Number(nu.extra) || 0);
+    const d = h.disc ?? {};
+    const pct = d.on === false ? 0 : typeof d.maxPct === "number" ? Math.min(100, Math.max(0, d.maxPct)) : 20;
+    if (nu.discount > Math.floor((sub * pct) / 100)) return "discount_too_big";
+  }
+  return null;
+}
+
 function stripFor(t: string, d: Row, perms: Set<Perm>): Row {
   if (t === "bookings" && !perms.has("money.view")) return { ...d, payments: [] };
   return d;
@@ -180,7 +236,7 @@ sync.get("/pull", async (c) => {
     changes: rows.map((x) => ({ t: x.tbl, id: x.id, data: stripFor(x.tbl, JSON.parse(x.data), perms), ts: x.updated_at, seq: x.seq })),
     next: rows.length ? rows[rows.length - 1].seq : since,
     more,
-    hotel: { name: h.name, plan: h.plan, feat: JSON.parse(h.feat) },
+    hotel: { name: h.name, plan: h.plan, feat: featOf(h.feat) },
   });
 });
 

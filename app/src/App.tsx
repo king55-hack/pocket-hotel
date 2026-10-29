@@ -5,6 +5,8 @@ import { db, ensureHotel, setLang } from "./db";
 import { tr, type Key, type Lang } from "./i18n";
 import { BillScreen, Booking as BookingScreen, Chart, Clean, Food, Money, SettingsScreen, type P, type Tab } from "./screens";
 import { Bookings } from "./bookingsScreen";
+import { Reports } from "./reportsScreen";
+import { Shifts } from "./shiftsScreen";
 import { Header } from "./header";
 import { AdminPage, Login, StaffScreen } from "./screens2";
 import { countPending, getSyncState, onSync, startAutoSync, syncNow } from "./sync";
@@ -40,6 +42,7 @@ function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onO
   const rooms = useLiveQuery(() => db.rooms.orderBy("n").filter((r) => !r.deleted).toArray());
   const bookings = useLiveQuery(() => db.bookings.toArray());
   const orders = useLiveQuery(() => db.orders.orderBy("at").toArray());
+  const shiftCount = useLiveQuery(() => db.shifts.count(), [], 0);
   const [tab, setTab] = useState<Tab>("rooms");
   const [sel, setSel] = useState<string>("");
   const [draft, setDraft] = useState<{ room: string; from: string } | null>(null);
@@ -72,6 +75,9 @@ function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onO
   if (hotel.feat.restaurant && can("restaurant")) tabs.push(["food", "🍽"]);
   if (can("checkout")) tabs.push(["bill", "🧾"]);
   if (can("money.view")) tabs.push(["money", "₨"]);
+  if (can("reports.view")) tabs.push(["report", "📊"]);
+  // kept out of sight until it is useful: the manager (to plan), clock in/out, or a person who has been given a shift
+  if (session && hotel.feat.shifts && (can("staff.manage") || hotel.feat.attendance || shiftCount > 0)) tabs.push(["shifts", "🕒"]);
   if (hotel.feat.housekeeping && can("housekeeping")) tabs.push(["clean", "🧹"]);
   if (session && can("staff.manage")) tabs.push(["staff", "👥"]);
   tabs.push(["set", "⚙"]);
@@ -92,6 +98,8 @@ function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onO
         {cur === "bill" && <BillScreen {...p} />}
         {cur === "money" && <Money {...p} />}
         {cur === "clean" && <Clean {...p} />}
+        {cur === "report" && <Reports {...p} />}
+        {cur === "shifts" && <Shifts {...p} />}
         {cur === "staff" && session && <StaffScreen L={L} session={session} />}
         {cur === "set" && <SettingsScreen {...p} />}
         {sync.status === "error" && <div className="warn" role="alert">{sync.error === "device_revoked" ? (L === "ne" ? "यो फोन बन्द गरिएको छ।" : "This phone was switched off.") : L === "ne" ? "सर्भरसँग सिंक हुन सकेन। तपाईंका परिवर्तन यो फोनमा सुरक्षित छन्।" : "Could not sync. Your changes are safe on this phone."}</div>}

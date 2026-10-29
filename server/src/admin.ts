@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { type App } from "./util";
 import { safeEqual, sha256 } from "./crypto";
 import { sendMail, type Env } from "./mail";
-import { FEATURE_KEYS } from "./perms";
+import { FEATURE_KEYS, featOf } from "./perms";
 
 /** The seller's own tools. Every route needs the ADMIN_KEY; wrong keys are counted per address. */
 export const admin = new Hono<App>();
@@ -44,7 +44,7 @@ admin.get("/hotels", async (c) => {
      FROM hotels h JOIN users o ON o.hotel_id=h.id AND o.role='owner'
      WHERE (?1='' OR h.name LIKE ?2 ESCAPE '\\' OR o.email LIKE ?2 ESCAPE '\\') ORDER BY h.created_at DESC LIMIT 100`,
   ).bind(q, like(q)).all<any>();
-  return c.json({ hotels: r.results.map((h) => ({ ...h, feat: JSON.parse(h.feat) })) });
+  return c.json({ hotels: r.results.map((h) => ({ ...h, feat: featOf(h.feat) })) });
 });
 
 admin.get("/hotels/:id/logins", async (c) => {
@@ -58,7 +58,7 @@ admin.post("/hotels/:id/features", async (c) => {
   if (!b || typeof b.feat !== "object" || !b.feat) return c.json({ error: "invalid" }, 400);
   const h = await c.env.DB.prepare("SELECT feat FROM hotels WHERE id=?").bind(c.req.param("id")).first<{ feat: string }>();
   if (!h) return c.json({ error: "not_found" }, 404);
-  const feat = JSON.parse(h.feat);
+  const feat = featOf(h.feat);
   for (const k of FEATURE_KEYS) if (typeof b.feat[k] === "boolean") feat[k] = b.feat[k];
   await c.env.DB.prepare("UPDATE hotels SET feat=? WHERE id=?").bind(JSON.stringify(feat), c.req.param("id")).run();
   if (typeof b.plan === "string" && ["free", "basic", "pro"].includes(b.plan)) await c.env.DB.prepare("UPDATE hotels SET plan=? WHERE id=?").bind(b.plan, c.req.param("id")).run();

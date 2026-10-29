@@ -1,6 +1,6 @@
 const D = {
   en: {
-    rooms: "Rooms", staff: "Staff", book: "New booking", stay: "Bookings", food: "Restaurant", bill: "Bill", clean: "Cleaning", money: "Money", set: "Settings", admin: "Admin",
+    rooms: "Rooms", staff: "Staff", book: "New booking", stay: "Bookings", food: "Restaurant", bill: "Bill", clean: "Cleaning", money: "Money", set: "Settings", admin: "Admin", report: "Reports", shifts: "Shifts",
     free: "Free", booked: "Booked", occupied: "Occupied", toClean: "To clean", out: "Out of order",
     tapFree: "Tap a free box to book.", today: "Today", arriving: "Arriving",
     guestName: "Guest name", phone: "Phone", room: "Room", nights: "Nights", arrival: "Arrival", from: "Booking came from", advance: "Advance (Rs)",
@@ -16,11 +16,11 @@ const D = {
     export: "Download bookings (Excel/CSV)", install: "Install app", offline: "Works offline. Data is saved on this device.",
     day: "Day book", byMethod: "By method", noPay: "No payments yet.", adminNote: "Test page only: in the real version only the admin can see this, not hotel owners.",
     sample: "Load sample rooms", rn: "rooms", save: "Save", logo: "Lang",
-    f_restaurant: "Restaurant / room service", f_housekeeping: "Housekeeping list", f_sources: "Own booking sources", f_excel: "Excel export", f_email: "Email bills", f_publicLink: "'Book here' public link (later)", f_ical: "Calendar link sync (later)",
+    f_restaurant: "Restaurant / room service", f_housekeeping: "Housekeeping list", f_sources: "Own booking sources", f_excel: "Excel export", f_email: "Email bills", f_publicLink: "'Book here' public link (later)", f_ical: "Calendar link sync (later)", f_shifts: "Staff shifts", f_attendance: "Clock in / out (premium)",
     auditLog: "Activity log", cancelled: "Cancelled", noShowDone: "Marked no-show",
   },
   ne: {
-    rooms: "कोठा", staff: "स्टाफ", book: "नयाँ बुकिङ", stay: "बुकिङ सूची", food: "रेस्टुरेन्ट", bill: "बिल", clean: "सफाई", money: "पैसा", set: "सेटिङ", admin: "एडमिन",
+    rooms: "कोठा", staff: "स्टाफ", book: "नयाँ बुकिङ", stay: "बुकिङ सूची", food: "रेस्टुरेन्ट", bill: "बिल", clean: "सफाई", money: "पैसा", set: "सेटिङ", admin: "एडमिन", report: "रिपोर्ट", shifts: "सिफ्ट",
     free: "खाली", booked: "बुक", occupied: "भरिएको", toClean: "सफा गर्ने", out: "बिग्रेको",
     tapFree: "खाली घरमा थिचेर बुकिङ गर्नुस्।", today: "आज", arriving: "आज आउने",
     guestName: "ग्राहकको नाम", phone: "फोन", room: "कोठा", nights: "कति रात", arrival: "आगमन मिति", from: "बुकिङ कहाँबाट आयो?", advance: "अग्रिम (Rs)",
@@ -36,7 +36,7 @@ const D = {
     export: "बुकिङ डाउनलोड (Excel/CSV)", install: "एप इन्स्टल गर्नुस्", offline: "इन्टरनेट बिना चल्छ। डेटा यही मोबाइल/कम्प्युटरमा सेभ हुन्छ।",
     day: "दिनको हिसाब", byMethod: "तरिका अनुसार", noPay: "अहिलेसम्म भुक्तानी छैन।", adminNote: "यो परीक्षण पेज मात्र हो: असली संस्करणमा एडमिनले मात्र देख्छ, होटल मालिकले होइन।",
     sample: "नमुना कोठा हाल्नुस्", rn: "कोठा", save: "सेभ", logo: "भाषा",
-    f_restaurant: "रेस्टुरेन्ट / रुम सर्भिस", f_housekeeping: "सफाई सूची", f_sources: "आफ्ना बुकिङ स्रोत", f_excel: "एक्सेल एक्सपोर्ट", f_email: "इमेलबाट बिल", f_publicLink: "'यहाँ बुक गर्नुस्' लिङ्क (पछि)", f_ical: "क्यालेन्डर लिङ्क (पछि)",
+    f_restaurant: "रेस्टुरेन्ट / रुम सर्भिस", f_housekeeping: "सफाई सूची", f_sources: "आफ्ना बुकिङ स्रोत", f_excel: "एक्सेल एक्सपोर्ट", f_email: "इमेलबाट बिल", f_publicLink: "'यहाँ बुक गर्नुस्' लिङ्क (पछि)", f_ical: "क्यालेन्डर लिङ्क (पछि)", f_shifts: "स्टाफ सिफ्ट", f_attendance: "हाजिरी लगइन/लगआउट (प्रिमियम)",
     auditLog: "गतिविधि लग", cancelled: "रद्द", noShowDone: "आएन भनियो",
   },
 } as const;

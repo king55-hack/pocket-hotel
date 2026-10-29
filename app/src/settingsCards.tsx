@@ -1,26 +1,34 @@
 import { useState } from "react";
-import { addRoom, addRoomRange, changePrice, deleteRoom, loadSampleRooms } from "./actions";
+import { addRoom, addRoomRange, changePrice, deleteRoom, loadSampleRooms, setRoomCat } from "./actions";
 import { db, STARTER_MENU, uid } from "./db";
 import type { Lang } from "./i18n";
-import type { Hotel, MenuItem, Room } from "./lib/types";
+import { capOf } from "./lib/policy";
+import type { Hotel, MenuItem, Room, RoomCat } from "./lib/types";
 import { PrintBar } from "./PrintBar";
 import { getPaper, setPaper, type Paper, type Row } from "./print";
 
 const T = (L: Lang) => (ne: string, en: string) => (L === "ne" ? ne : en);
 
-export function RoomsCard({ L, rooms, can, local }: { L: Lang; rooms: Room[]; can: (p: string) => boolean; local: boolean }) {
+export function RoomsCard({ L, rooms, cats, can, local }: { L: Lang; rooms: Room[]; cats: RoomCat[]; can: (p: string) => boolean; local: boolean }) {
   const t = T(L);
-  const [nr, setNr] = useState({ n: "", type: "Double", floor: "1", beds: "2", price: "2500" });
+  const first = cats.find((c) => c.name === "Double") ?? cats[0];
+  const [nr, setNr] = useState({ n: "", type: first?.name ?? "Double", floor: "1", price: String(first?.price ?? 2500) });
   const [rg, setRg] = useState({ from: "101", to: "110" });
   const [msg, setMsg] = useState("");
   const manage = can("rooms.manage");
-  const TYPES = ["Single", "Double", "Deluxe", "Family", "Dorm"];
-  const base = () => ({ type: nr.type, floor: Number(nr.floor) || 1, beds: Number(nr.beds) || 1, price: Number(nr.price) || 0 });
+  const chosen = cats.find((c) => c.name === nr.type);
+  const base = () => ({ type: nr.type, floor: Number(nr.floor) || 1, beds: chosen?.cap ?? 1, cap: chosen?.cap, price: Number(nr.price) || 0 });
   return (
     <div className="card"><h2>{t("कोठा र मूल्य", "Rooms and prices")}</h2>
       {rooms.map((r) => (
-        <div className="row" style={{ marginBottom: 6 }} key={r.n}>
-          <b style={{ minWidth: 84 }}>{r.n} <small>{r.type}</small></b>
+        <div className="row" style={{ marginBottom: 6, flexWrap: "wrap" }} key={r.n}>
+          <b style={{ minWidth: 70 }}>{r.n}</b>
+          {manage && cats.length > 0 ? (
+            <select aria-label={`category ${r.n}`} style={{ flex: 1, minWidth: 110 }} value={cats.some((c) => c.name === r.type) ? r.type : ""} onChange={(e) => { const c = cats.find((x) => x.name === e.target.value); if (c) void setRoomCat(r.n, c); }}>
+              {!cats.some((c) => c.name === r.type) && <option value="">{r.type}</option>}
+              {cats.map((c) => <option key={c.id} value={c.name}>{c.name} · {c.cap} {t("जना", "ppl")}</option>)}
+            </select>
+          ) : <small>{r.type} · {capOf(r, cats)} {t("जना", "ppl")}</small>}
           <input aria-label={`price ${r.n}`} type="number" inputMode="numeric" defaultValue={r.price} disabled={!can("prices.edit")} onBlur={(e) => void changePrice(r.n, Number(e.target.value))} />
           {manage && <button className={"btn sm " + (r.st === "out" ? "bad" : "alt")} aria-label={`out of order ${r.n}`} title={t("बिग्रेको", "Out of order")} onClick={() => void db.rooms.update(r.n, { st: r.st === "out" ? "free" : "out" })}>{r.st === "out" ? "✕" : "✓"}</button>}
           {manage && <button className="btn sm bad" aria-label={`delete room ${r.n}`} onClick={async () => {
@@ -35,10 +43,9 @@ export function RoomsCard({ L, rooms, can, local }: { L: Lang; rooms: Room[]; ca
         <>
           <h3>＋ {t("कोठा थप्ने", "Add rooms")}</h3>
           <div className="grid2">
-            <div><label htmlFor="nt">{t("किसिम", "Type")}</label><select id="nt" value={nr.type} onChange={(e) => setNr({ ...nr, type: e.target.value })}>{TYPES.map((x) => <option key={x}>{x}</option>)}</select></div>
+            <div><label htmlFor="nt">{t("किसिम", "Type")}</label><select id="nt" value={nr.type} onChange={(e) => { const c = cats.find((x) => x.name === e.target.value); setNr({ ...nr, type: e.target.value, price: c ? String(c.price) : nr.price }); }}>{cats.map((c) => <option key={c.id} value={c.name}>{c.name} · {c.cap} {t("जना", "ppl")}</option>)}</select></div>
             <div><label htmlFor="np">{t("मूल्य (Rs)", "Price (Rs)")}</label><input id="np" type="number" inputMode="numeric" value={nr.price} onChange={(e) => setNr({ ...nr, price: e.target.value })} /></div>
             <div><label htmlFor="nf">{t("तल्ला", "Floor")}</label><input id="nf" type="number" inputMode="numeric" value={nr.floor} onChange={(e) => setNr({ ...nr, floor: e.target.value })} /></div>
-            <div><label htmlFor="nb">{t("खाट", "Beds")}</label><input id="nb" type="number" inputMode="numeric" value={nr.beds} onChange={(e) => setNr({ ...nr, beds: e.target.value })} /></div>
           </div>
           <label htmlFor="nn">{t("एउटा कोठा: नम्बर", "One room: number")}</label>
           <div className="row"><input id="nn" value={nr.n} onChange={(e) => setNr({ ...nr, n: e.target.value })} />

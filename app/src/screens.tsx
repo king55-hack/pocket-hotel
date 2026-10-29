@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { addOrderToBooking, addToRoomBill, checkOut, createBooking, loadSampleRooms, moveBooking, payOrderAtTable, type Result } from "./actions";
 import { MenuCard, PrinterCard, RoomsCard } from "./settingsCards";
+import { CategoriesCard, RulesCard, ShiftSetupCard } from "./settingsCards2";
 import { BillActions } from "./BillActions";
 import { db, STARTER_MENU, uid } from "./db";
 import { calcBill, sumLines } from "./lib/bill";
+import { MAX_EXTRA_BEDS, catsOf, discOf, maxDiscount, maxPersons, rateOf } from "./lib/policy";
 import { bookingAt, findConflicts, paidSum } from "./lib/booking";
 import { addDays, daysBetween, shortDay, todayISO } from "./lib/dates";
 import type { Booking, Hotel, Line, Order, Room } from "./lib/types";
@@ -11,7 +13,7 @@ import { tr, type Key, type Lang } from "./i18n";
 import { api, type Session } from "./api";
 import { AccountCard, LocalCard } from "./screens2";
 
-export type Tab = "rooms" | "book" | "stay" | "food" | "bill" | "money" | "clean" | "set" | "staff";
+export type Tab = "rooms" | "book" | "stay" | "food" | "bill" | "money" | "clean" | "set" | "staff" | "report" | "shifts";
 export type P = {
   h: Hotel; L: Lang; rooms: Room[]; bookings: Booking[]; orders: Order[];
   go: (t: Tab, id?: string) => void; sel: string; can: (p: string) => boolean; session: Session | null; onOut: () => void;
@@ -24,6 +26,8 @@ const errText = (L: Lang, e: string) =>
   e === "name" ? tr(L, "needName")
     : e === "taken" ? tr(L, "taken")
     : e === "past" ? (L === "ne" ? "बितिसकेको मितिमा बुकिङ गर्न मिल्दैन। आजको वा पछिको मिति रोज्नुहोस्।" : "You cannot book a day that is already over. Pick today or a later date.")
+    : e === "guests" ? (L === "ne" ? "कोठामा अटाउने भन्दा बढी मान्छे राख्न मिल्दैन।" : "More people than the room can hold.")
+    : e === "money" ? (L === "ne" ? "रकम ठूलो वा गलत छ (अग्रिम पूरा बसाइको बिल भन्दा बढी हुन मिल्दैन)।" : "The amount is too big or not right (an advance cannot be more than the whole stay).")
     : L === "ne" ? "यो काम गर्न मिलेन। फेरि जाँच्नुहोस्।" : "Could not do this. Please check and try again.";
 
 function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) {
@@ -115,9 +119,12 @@ export function Booking({ h, L, rooms, draft, setDraft, go }: P) {
   const [nights, setNights] = useState("1");
   const [src, setSrc] = useState(h.sources[0] ?? "Phone");
   const [adv, setAdv] = useState("0");
+  const [pax, setPax] = useState("1");
   const [err, setErr] = useState("");
+  const sel = rooms.find((x) => x.n === room);
+  const most = sel ? maxPersons(sel, catsOf(h), MAX_EXTRA_BEDS) : 1;
   async function save() {
-    const r = await createBooking({ room, from, nights: Number(nights), guest, phone, src, advance: Number(adv) });
+    const r = await createBooking({ room, from, nights: Number(nights), guest, phone, src, advance: Number(adv), persons: Number(pax) });
     if (!r.ok) return setErr(errText(L, r.error));
     setDraft(null);
     go("rooms");
@@ -127,8 +134,12 @@ export function Booking({ h, L, rooms, draft, setDraft, go }: P) {
       <label htmlFor="bg">{t("guestName")}</label><input id="bg" value={guest} onChange={(e) => setGuest(e.target.value)} autoComplete="off" />
       <label htmlFor="bp">{t("phone")}</label><input id="bp" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
       <div className="grid2">
-        <div><label htmlFor="br">{t("room")}</label><select id="br" value={room} onChange={(e) => setRoom(e.target.value)}>{open.map((r) => <option key={r.n} value={r.n}>{r.n}{r.st === "clean" ? " 🧹" : ""}</option>)}</select></div>
+        <div><label htmlFor="br">{t("room")}</label><select id="br" value={room} onChange={(e) => setRoom(e.target.value)}>{open.map((r) => <option key={r.n} value={r.n}>{r.n} · {r.type}{r.st === "clean" ? " 🧹" : ""}</option>)}</select></div>
         <div><label htmlFor="bn">{t("nights")}</label><input id="bn" type="number" min="1" inputMode="numeric" value={nights} onChange={(e) => setNights(e.target.value)} /></div>
+      </div>
+      <div className="grid2">
+        <div><label htmlFor="bx">{L === "ne" ? "कति जना" : "People"}</label><input id="bx" type="number" min="1" max={most} inputMode="numeric" value={pax} onChange={(e) => setPax(e.target.value)} /></div>
+        <div className="note" style={{ alignSelf: "end", margin: 0 }}><small>{L === "ne" ? `यो कोठामा ${sel ? maxPersons(sel, catsOf(h), 0) : 1} जना (थप खाटसहित ${most})` : `Fits ${sel ? maxPersons(sel, catsOf(h), 0) : 1} (${most} with extra beds)`}</small></div>
       </div>
       <label htmlFor="bd">{t("arrival")}</label><input id="bd" type="date" min={todayISO()} value={from} onChange={(e) => setFrom(e.target.value)} />
       <label htmlFor="bs">{t("from")}</label><select id="bs" value={src} onChange={(e) => setSrc(e.target.value)}>{h.sources.map((s) => <option key={s}>{s}</option>)}</select>
@@ -188,7 +199,7 @@ export function Food({ h, L, bookings, orders }: P) {
   );
 }
 
-export function BillScreen({ h, L, rooms, bookings, orders, sel, session }: P) {
+export function BillScreen({ h, L, rooms, bookings, orders, sel, session, can }: P) {
   const [reprint, setReprint] = useState("");
   const t = useT(L);
   const occ = bookings.filter((b) => b.status === "occupied");
@@ -196,6 +207,7 @@ export function BillScreen({ h, L, rooms, bookings, orders, sel, session }: P) {
   const [extra, setExtra] = useState("0");
   const [cash, setCash] = useState<string | null>(null);
   const [qr, setQr] = useState("0");
+  const [disc, setDisc] = useState("0");
   const [err, setErr] = useState("");
   const [done, setDone] = useState<{ billNo: string; due: number; id: string } | null>(null);
   const b = occ.find((x) => x.id === pick) ?? occ[0];
@@ -221,27 +233,33 @@ export function BillScreen({ h, L, rooms, bookings, orders, sel, session }: P) {
   if (!b) return <><div className="card"><h2>{t("bill")}</h2><p>{t("noOcc")}</p></div>{recentCard}</>;
   const room = rooms.find((r) => r.n === b.room);
   const e = Math.max(0, Math.round(Number(extra) || 0));
-  const roomAmt = (room?.price ?? 0) * b.nights, food = sumLines(b.food);
-  const c = calcBill(roomAmt + food + e, h.bill);
+  const roomAmt = rateOf(b, room) * b.nights, food = sumLines(b.food);
+  const sub = roomAmt + food + e;
+  const dc = discOf(h);
+  const showDisc = dc.on && can("discount");
+  const cap = maxDiscount(sub, dc);
+  const d = showDisc ? Math.max(0, Math.round(Number(disc) || 0)) : 0;
+  const c = calcBill(sub - Math.min(d, sub), h.bill);
   const due = c.total - paidSum(b);
   const cashV = cash ?? String(Math.max(0, due));
   const inc = h.bill.taxIncluded;
   async function out() {
     if (!b) return;
-    const r: Result<{ billNo: string; due: number }> = await checkOut(b.id, e, { cash: Number(cashV) || 0, qr: Number(qr) || 0 });
-    if (!r.ok) return setErr(r.error === "amount" ? (L === "ne" ? "भुक्तानी तिर्न बाँकी भन्दा बढी छ।" : "Payment is more than the amount due.") : errText(L, r.error));
+    const r: Result<{ billNo: string; due: number }> = await checkOut(b.id, e, { cash: Number(cashV) || 0, qr: Number(qr) || 0 }, d);
+    if (!r.ok) return setErr(r.error === "amount" ? (d > cap ? (L === "ne" ? `छुट ${rs(cap)} (${dc.maxPct}%) भन्दा बढी हुन मिल्दैन।` : `The discount cannot be more than ${rs(cap)} (${dc.maxPct}%).`) : L === "ne" ? "भुक्तानी तिर्न बाँकी भन्दा बढी छ।" : "Payment is more than the amount due.") : r.error === "money" ? (L === "ne" ? "रकम ठूलो वा गलत छ।" : "The amount is too big or not right.") : errText(L, r.error));
     setDone({ ...r.value, id: b.id });
   }
   return (
     <>
     <div className="card"><h2>{t("bill")}</h2>
       <label htmlFor="bsel">{t("room")}</label>
-      <select id="bsel" value={b.id} onChange={(e2) => { setPick(e2.target.value); setCash(null); setErr(""); }}>{occ.map((x) => <option key={x.id} value={x.id}>{x.room} · {x.guest}</option>)}</select>
+      <select id="bsel" value={b.id} onChange={(e2) => { setPick(e2.target.value); setCash(null); setErr(""); setDisc("0"); }}>{occ.map((x) => <option key={x.id} value={x.id}>{x.room} · {x.guest}</option>)}</select>
       <p style={{ fontSize: 14, color: "var(--mute)" }}>{h.bill.vatInvoice ? t("invoice") : t("receipt")}{h.bill.vatInvoice && h.pan ? ` · PAN ${h.pan}` : ""}</p>
       <table className="bill"><tbody>
         <tr><td>{t("room")} {b.room} × {b.nights}</td><td>{rs(roomAmt)}</td></tr>
         <tr><td>{t("food")}</td><td>{rs(food)}</td></tr>
         <tr><td><label htmlFor="ex">{t("extras")}</label></td><td><input id="ex" type="number" min="0" inputMode="numeric" value={extra} onChange={(x) => setExtra(x.target.value)} /></td></tr>
+        {d > 0 && <tr><td>{L === "ne" ? "छुट" : "Discount"}</td><td>− {rs(Math.min(d, sub))}</td></tr>}
         {inc && <tr><td colSpan={2} style={{ color: "var(--mute)", fontSize: 13 }}>{t("taxIn")}</td></tr>}
         {h.bill.svc && <tr><td>{t("svc")} {h.bill.svcPct}%{inc ? " (incl.)" : ""}</td><td>{rs(c.svc)}</td></tr>}
         {h.bill.vatInvoice && <tr><td>VAT {h.bill.vat}%{inc ? " (incl.)" : ""}</td><td>{rs(c.vat)}</td></tr>}
@@ -249,6 +267,10 @@ export function BillScreen({ h, L, rooms, bookings, orders, sel, session }: P) {
         <tr><td>{t("advancePaid")}</td><td>− {rs(paidSum(b))}</td></tr>
         <tr className="tot"><td>{t("due")}</td><td>{rs(due)}</td></tr>
       </tbody></table>
+      {showDisc && (
+        <div className="note"><label htmlFor="dsc" style={{ marginTop: 0 }}>{L === "ne" ? `छुट (Rs) · बढीमा ${rs(cap)} (${dc.maxPct}%)` : `Discount (Rs) · up to ${rs(cap)} (${dc.maxPct}%)`}</label>
+          <input id="dsc" type="number" min="0" max={cap} inputMode="numeric" value={disc} onChange={(x) => { setDisc(x.target.value); setCash(null); }} />
+          <div>{dc.presets.map((p) => <button key={p} className="btn sm alt" onClick={() => { setDisc(String(Math.min(cap, Math.floor((sub * p) / 100)))); setCash(null); }}>{p}%</button>)}<button className="btn sm alt" onClick={() => { setDisc("0"); setCash(null); }}>0</button></div></div>)}
       {waiting(b.id).length > 0 && (
         <div className="note"><b>{L === "ne" ? "रेस्टुरेन्टका बिल बाँकी छन्" : "Restaurant orders not on a bill yet"}</b>
           {waiting(b.id).map((o) => (
@@ -273,30 +295,66 @@ function csv(rows: (string | number)[][]) {
 
 export function Money({ h, L, bookings, orders }: P) {
   const t = useT(L);
-  const day = todayISO();
+  const ne = L === "ne";
+  const today = todayISO();
+  // any day can be opened: nothing is ever deleted, so the old day books stay here
+  const [day, setDay] = useState(today);
+  const [span, setSpan] = useState({ from: addDays(today, -30), to: today });
   const isToday = (ms: number) => todayISO(new Date(ms)) === day;
+  const closed = bookings.filter((b) => b.status === "done" && b.billNo && todayISO(new Date(b.outAt ?? b.updatedAt)) === day);
   const pays = bookings.flatMap((b) => b.payments.filter((p) => isToday(p.at)).map((p) => ({ ...p, who: b.guest, room: b.room })));
   const by: Record<string, number> = {};
   for (const p of pays) by[p.method] = (by[p.method] ?? 0) + (p.kind === "refund" ? -p.amount : p.amount);
   const tableSales = orders.filter((o) => o.paid && isToday(o.paid.at));
   for (const o of tableSales) by[o.paid!.method] = (by[o.paid!.method] ?? 0) + o.paid!.amount;
-  function download() {
-    const rows: (string | number)[][] = [["Bill", "Room", "Guest", "From", "Nights", "Status", "Source", "Paid"]];
-    for (const b of bookings) rows.push([b.billNo ?? "", b.room, b.guest, b.from, b.nights, b.status, b.src, paidSum(b)]);
+  function save(rows: (string | number)[][], name: string) {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv(rows)], { type: "text/csv" }));
-    a.download = `bookings-${day}.csv`;
+    a.download = name;
     a.click();
     URL.revokeObjectURL(a.href);
   }
+  const download = () => {
+    const rows: (string | number)[][] = [["Bill", "Room", "Guest", "From", "Nights", "Status", "Source", "Paid"]];
+    for (const b of bookings) rows.push([b.billNo ?? "", b.room, b.guest, b.from, b.nights, b.status, b.src, paidSum(b)]);
+    save(rows, `bookings-${today}.csv`);
+  };
+  // every payment and table sale between two dates, for the accountant
+  const downloadSpan = () => {
+    const [a, z] = span.from <= span.to ? [span.from, span.to] : [span.to, span.from];
+    const rows: (string | number)[][] = [["Date", "Time", "Type", "Room/Table", "Guest", "Method", "Amount", "Bill"]];
+    const inSpan = (ms: number) => { const d = todayISO(new Date(ms)); return d >= a && d <= z; };
+    const all: { at: number; row: (string | number)[] }[] = [];
+    for (const b of bookings) for (const p of b.payments) if (inSpan(p.at) && p.method !== "credit") all.push({ at: p.at, row: ["", "", p.kind, b.room, b.guest, p.method, p.kind === "refund" ? -p.amount : p.amount, b.billNo ?? ""] });
+    for (const o of orders) if (o.paid && inSpan(o.paid.at)) all.push({ at: o.paid.at, row: ["", "", "table", o.to.replace("T", ""), "", o.paid.method, o.paid.amount, ""] });
+    for (const x of all.sort((p, q) => p.at - q.at)) { const d = new Date(x.at); x.row[0] = todayISO(d); x.row[1] = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); rows.push(x.row); }
+    save(rows, `money-${a}-to-${z}.csv`);
+  };
   return (
-    <div className="card"><h2>{t("day")} · {shortDay(day)}</h2>
+    <>
+    <div className="card"><h2>{t("day")} · {shortDay(day)}{day === today ? "" : ` (${day.slice(0, 4)})`}</h2>
+      <div className="row" style={{ marginBottom: 8 }}>
+        <button className="btn sm alt" aria-label="previous day" onClick={() => setDay(addDays(day, -1))}>‹</button>
+        <input aria-label={ne ? "मिति" : "Date"} type="date" max={today} value={day} onChange={(e) => e.target.value && setDay(e.target.value > today ? today : e.target.value)} />
+        <button className="btn sm alt" aria-label="next day" disabled={day >= today} onClick={() => setDay(addDays(day, 1))}>›</button>
+        <button className="btn sm alt" disabled={day === today} onClick={() => setDay(today)}>{t("today")}</button>
+      </div>
+      {closed.length > 0 && <p style={{ margin: "4px 0", fontSize: 14 }}>{ne ? "यो दिन चेक-आउट भएका बिल" : "Bills closed this day"}: {closed.map((b) => b.billNo).join(", ")}</p>}
       {Object.entries(by).map(([m, v]) => <div className="item" key={m}><span>{m}</span><b>{rs(v)}</b></div>)}
       {!pays.length && !tableSales.length && <p>{t("noPay")}</p>}
       {tableSales.map((o) => <div className="item" key={o.id}><span>{L === "ne" ? "टेबल बिक्री" : "Table sale"} · {o.to.replace("T", "")}<br /><small>{o.paid!.method}</small></span><span>{rs(o.paid!.amount)}</span></div>)}
       {pays.map((p) => <div className="item" key={p.id}><span>{p.who} · {p.room}<br /><small>{p.method} · {p.kind}</small></span><span>{rs(p.amount)}</span></div>)}
       {h.feat.excel && <button className="btn alt" onClick={download}>{t("export")}</button>}
     </div>
+    <div className="card"><h3>{ne ? "पुरानो हिसाब डाउनलोड" : "Download old records"}</h3>
+      <p style={{ fontSize: 14, color: "var(--mute)", margin: "0 0 6px" }}>{ne ? "डेटा आफैं मेटिँदैन, कुनै दिन पनि माथि खोलेर हेर्न मिल्छ। हिसाब किताबको लागि फाइल चाहिए यहाँबाट लिनुस्।" : "Nothing is deleted by itself, so you can open any day above. For your accountant, download a file here."}</p>
+      <div className="grid2">
+        <div><label htmlFor="sf">{ne ? "देखि" : "From"}</label><input id="sf" type="date" max={today} value={span.from} onChange={(e) => e.target.value && setSpan({ ...span, from: e.target.value })} /></div>
+        <div><label htmlFor="st">{ne ? "सम्म" : "To"}</label><input id="st" type="date" max={today} value={span.to} onChange={(e) => e.target.value && setSpan({ ...span, to: e.target.value })} /></div>
+      </div>
+      <button className="btn alt" onClick={downloadSpan}>{ne ? "यी मितिको पैसाको फाइल (Excel/CSV)" : "Money in these dates (Excel/CSV)"}</button>
+    </div>
+    </>
   );
 }
 
@@ -336,7 +394,10 @@ export function SettingsScreen({ h, L, rooms, can, session, onOut }: P) {
           <div><label htmlFor="sp">{t("svc")} %</label><input id="sp" type="number" inputMode="decimal" defaultValue={h.bill.svcPct} onBlur={(e) => bill({ svcPct: Math.max(0, Number(e.target.value) || 0) })} /></div>
         </div>
         <div className="sw"><div>{t("keepId")}<small>{t("consent")}</small></div><Toggle label={t("keepId")} on={h.bill.idPhoto} onClick={() => bill({ idPhoto: !h.bill.idPhoto })} /></div></div>}
-      {(can("prices.edit") || can("rooms.manage")) && <RoomsCard L={L} rooms={rooms} can={can} local={!session} />}
+      {(can("prices.edit") || can("rooms.manage")) && <RoomsCard L={L} rooms={rooms} cats={catsOf(h)} can={can} local={!session} />}
+      {can("rooms.manage") && <CategoriesCard L={L} h={h} />}
+      {can("settings.edit") && <RulesCard L={L} h={h} />}
+      {can("settings.edit") && h.feat.shifts && !!session && <ShiftSetupCard L={L} h={h} />}
       {can("settings.edit") && h.feat.restaurant && <MenuCard L={L} h={h} />}
       <PrinterCard L={L} />
       {h.feat.sources && can("settings.edit") ? (

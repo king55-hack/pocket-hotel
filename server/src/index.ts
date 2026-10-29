@@ -4,7 +4,7 @@ import type { Context } from "hono";
 import { hashPassword, randomHex, safeEqual, sha256, signJwt, verifyJwt } from "./crypto";
 import { sendMail, type Env } from "./mail";
 import { otpEmail } from "./otpEmail";
-import { DEFAULT_FEATURES, PERMS, permsOf } from "./perms";
+import { DEFAULT_FEATURES, PERMS, featOf, permsOf } from "./perms";
 import { audit, bad, body, logLogin, need, type App } from "./util";
 import { sync } from "./sync";
 import { staff } from "./staff";
@@ -85,7 +85,7 @@ async function upsertDevice(env: Env, id: string, hotelId: string, userId: strin
 
 async function hotelInfo(env: Env, hotelId: string) {
   const h = await env.DB.prepare("SELECT id,name,code,plan,feat FROM hotels WHERE id=?").bind(hotelId).first<any>();
-  return h && { id: h.id, name: h.name, code: h.code, plan: h.plan, feat: JSON.parse(h.feat) };
+  return h && { id: h.id, name: h.name, code: h.code, plan: h.plan, feat: featOf(h.feat) };
 }
 async function session(env: Env, u: any, deviceId: string) {
   return { ...(await tokens(env, u.id, u.hotel_id, deviceId)), user: { id: u.id, name: u.name, role: u.role, perms: [...permsOf(u)] }, hotel: await hotelInfo(env, u.hotel_id) };

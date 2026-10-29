@@ -1,4 +1,5 @@
 import { calcBill, sumLines } from "./lib/bill";
+import { rateOf } from "./lib/policy";
 import { shortDay } from "./lib/dates";
 import type { Booking, Hotel, Room } from "./lib/types";
 
@@ -217,7 +218,7 @@ export function printSystem(rows: Row[], paper: Paper = getPaper()) {
 /* ---------- what is on the bill ---------- */
 /** The three numbers people ask about: total, money received, still due. */
 export function billTotals(h: Hotel, b: Booking, room: Room | undefined) {
-  const total = calcBill((room?.price ?? 0) * b.nights + sumLines(b.food) + b.extra, h.bill).total;
+  const total = calcBill(rateOf(b, room) * b.nights + sumLines(b.food) + b.extra - (b.discount ?? 0), h.bill).total;
   const paid = b.payments.reduce((a, x) => a + (x.method === "credit" ? 0 : x.kind === "refund" ? -x.amount : x.amount), 0);
   return { total, paid, due: Math.max(0, total - paid) };
 }
@@ -225,10 +226,11 @@ export function billTotals(h: Hotel, b: Booking, room: Room | undefined) {
 export function receiptRows(h: Hotel, b: Booking, room: Room | undefined, L: "ne" | "en", opts: { copy?: boolean } = {}): Row[] {
   const t = (ne: string, en: string) => (L === "ne" ? ne : en);
   const rs = (n: number) => "Rs " + Math.round(n).toLocaleString("en-IN");
-  const roomAmt = (room?.price ?? 0) * b.nights;
+  const roomAmt = rateOf(b, room) * b.nights;
   const food = sumLines(b.food);
   const sub = roomAmt + food + b.extra;
-  const c = calcBill(sub, h.bill);
+  const disc = b.discount ?? 0;
+  const c = calcBill(sub - disc, h.bill);
   const inc = h.bill.taxIncluded;
   // money really received: the "credit" line only records what was left unpaid
   const paid = b.payments.reduce((a, x) => a + (x.method === "credit" ? 0 : x.kind === "refund" ? -x.amount : x.amount), 0);
@@ -247,6 +249,7 @@ export function receiptRows(h: Hotel, b: Booking, room: Room | undefined, L: "ne
     { l: `${t("कोठा", "Room")} ${b.room} × ${b.nights}`, r: rs(roomAmt) },
     ...b.food.flatMap((f) => [{ l: f.name } as Row, { l: `  ${f.qty} × ${f.price}`, r: rs(f.qty * f.price) } as Row]),
     ...(b.extra ? [{ l: t("अरू", "Extras"), r: rs(b.extra) } as Row] : []),
+    ...(disc ? [{ l: t("छुट", "Discount"), r: "− " + rs(disc) } as Row] : []),
     { l: "", rule: true },
     ...(inc ? [{ l: t("कर समावेश", "Tax included") } as Row] : []),
     ...(h.bill.svc ? [{ l: `${t("सर्भिस", "Service")} ${h.bill.svcPct}%`, r: rs(c.svc) } as Row] : []),

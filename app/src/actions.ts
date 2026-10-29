@@ -2,11 +2,12 @@ import { db, logAudit, uid, ensureHotel } from "./db";
 import { calcBill, sumLines } from "./lib/bill";
 import { findConflict, isActive, paidSum } from "./lib/booking";
 import { todayISO } from "./lib/dates";
-import type { Booking, GuestInfo, Line, OrderPay, Payment } from "./lib/types";
+import { MAX_EXTRA_BEDS, MAX_MONEY, MAX_PERSONS, catsOf, capOf, discOf, isMoney, maxDiscount, maxPersons, rateOf } from "./lib/policy";
+import type { Booking, GuestInfo, Line, OrderPay, Payment, RoomCat } from "./lib/types";
 
-export type Result<T = void> = { ok: true; value: T } | { ok: false; error: "name" | "taken" | "room" | "state" | "amount" | "inuse" | "dates" | "past" | "dirty" };
+export type Result<T = void> = { ok: true; value: T } | { ok: false; error: "name" | "taken" | "room" | "state" | "amount" | "inuse" | "dates" | "past" | "dirty" | "guests" | "money" };
 
-export async function createBooking(i: { room: string; from: string; nights: number; guest: string; phone: string; src: string; advance: number }, today = todayISO()): Promise<Result<Booking>> {
+export async function createBooking(i: { room: string; from: string; nights: number; guest: string; phone: string; src: string; advance: number; persons?: number }, today = todayISO()): Promise<Result<Booking>> {
   const guest = i.guest.trim();
   if (i.from.length !== 10 || Number.isNaN(Date.parse(i.from + "T00:00:00Z"))) return { ok: false, error: "dates" };
   if (i.from < today) return { ok: false, error: "past" }; // a booking cannot start on a day that is already over
@@ -14,30 +15,45 @@ export async function createBooking(i: { room: string; from: string; nights: num
   if (!guest) return { ok: false, error: "name" };
   if (!(nights >= 1) || nights > 365) return { ok: false, error: "amount" };
   const advance = Math.max(0, Math.round(i.advance || 0));
-  return db.transaction("rw", db.rooms, db.bookings, async () => {
+  const persons = Math.floor(i.persons ?? 1);
+  if (!(persons >= 1) || persons > MAX_PERSONS) return { ok: false, error: "guests" };
+  return db.transaction("rw", db.rooms, db.bookings, db.hotel, async () => {
     const room = await db.rooms.get(i.room);
     if (!room || room.deleted || room.st === "out") return { ok: false, error: "room" } as const;
+    const h = await ensureHotel();
+    // nobody can book more people than the room holds (two extra beds allowed), or an advance bigger than the whole stay
+    if (persons > maxPersons(room, catsOf(h), MAX_EXTRA_BEDS)) return { ok: false, error: "guests" } as const;
+    if (advance > MAX_MONEY || advance > calcBill(room.price * nights, h.bill).total) return { ok: false, error: "money" } as const;
     const all = await db.bookings.where("room").equals(i.room).toArray();
     if (findConflict(all, i.room, i.from, nights)) return { ok: false, error: "taken" } as const;
     const now = Date.now();
     const payments: Payment[] = advance > 0 ? [{ id: uid(), method: "cash", amount: advance, at: now, kind: "advance" }] : [];
-    const b: Booking = { id: uid(), room: i.room, from: i.from, nights, guest, phone: i.phone.trim(), src: i.src, status: "booked", payments, food: [], extra: 0, createdAt: now, updatedAt: now };
+    const b: Booking = { id: uid(), room: i.room, from: i.from, nights, guest, phone: i.phone.trim(), src: i.src, status: "booked", persons, payments, food: [], extra: 0, createdAt: now, updatedAt: now };
     await db.bookings.add(b);
     return { ok: true, value: b } as const;
   });
 }
 
-export async function checkIn(id: string, info: GuestInfo, o: { force?: boolean } = {}): Promise<Result> {
-  return db.transaction("rw", db.bookings, db.rooms, db.audit, async () => {
+export async function checkIn(id: string, info: GuestInfo, o: { force?: boolean; rate?: number } = {}): Promise<Result> {
+  const persons = Math.floor(info.persons);
+  if (!(persons >= 1) || persons > MAX_PERSONS) return { ok: false, error: "guests" };
+  const extraBeds = Math.max(0, Math.min(MAX_EXTRA_BEDS, Math.floor(info.extraBeds) || 0));
+  if (o.rate !== undefined && (!isMoney(o.rate) || o.rate !== Math.round(o.rate))) return { ok: false, error: "money" };
+  return db.transaction("rw", db.bookings, db.rooms, db.hotel, db.audit, async () => {
     const b = await db.bookings.get(id);
     if (!b || b.status !== "booked") return { ok: false, error: "state" } as const;
     const r = await db.rooms.get(b.room);
+    const h = await ensureHotel();
+    // the room holds only so many people (the owner sets it); an extra bed adds one place
+    if (r && persons > maxPersons(r, catsOf(h), extraBeds)) return { ok: false, error: "guests" } as const;
+    const rate = o.rate ?? r?.price;
+    if (r && rate !== undefined && rate !== r.price) await logAudit("price changed at check-in", `room ${b.room} ${r.price} -> ${rate}`);
     // The last guest left but the room has not been cleaned: a new guest must not be put in it.
     if (r?.st === "clean") {
       if (!o.force) return { ok: false, error: "dirty" } as const;
       await logAudit("checked in to an uncleaned room", `${b.guest} room ${b.room}`);
     }
-    await db.bookings.update(id, { status: "occupied", info, updatedAt: Date.now() });
+    await db.bookings.update(id, { status: "occupied", info: { ...info, persons, extraBeds }, persons, rate, updatedAt: Date.now() });
     return { ok: true, value: undefined } as const;
   });
 }
@@ -61,7 +77,7 @@ export async function addToRoomBill(bookingId: string, lines: Line[]): Promise<R
   });
 }
 
-export async function checkOut(id: string, extra: number, pay: { cash: number; qr: number }): Promise<Result<{ billNo: string; due: number }>> {
+export async function checkOut(id: string, extra: number, pay: { cash: number; qr: number }, discount = 0): Promise<Result<{ billNo: string; due: number }>> {
   return db.transaction("rw", db.bookings, db.rooms, db.hotel, db.audit, async () => {
     const b = await db.bookings.get(id);
     if (!b || b.status !== "occupied") return { ok: false, error: "state" } as const;
@@ -69,8 +85,12 @@ export async function checkOut(id: string, extra: number, pay: { cash: number; q
     const room = await db.rooms.get(b.room);
     if (!room) return { ok: false, error: "room" } as const;
     const e = Math.max(0, Math.round(extra || 0));
-    const sub = room.price * b.nights + sumLines(b.food) + e;
-    const total = calcBill(sub, h.bill).total;
+    if (e > MAX_MONEY) return { ok: false, error: "money" } as const;
+    const sub = rateOf(b, room) * b.nights + sumLines(b.food) + e;
+    const d = Math.max(0, Math.round(discount || 0));
+    // a discount is limited by the hotel's own rule (switched off, or at most some percent)
+    if (d > 0 && (!discOf(h).on || d > maxDiscount(sub, discOf(h)))) return { ok: false, error: "amount" } as const;
+    const total = calcBill(sub - d, h.bill).total;
     const cash = Math.max(0, Math.round(pay.cash || 0));
     const qr = Math.max(0, Math.round(pay.qr || 0));
     const due = total - paidSum(b);
@@ -87,10 +107,10 @@ export async function checkOut(id: string, extra: number, pay: { cash: number; q
     if (qr > 0) payments.push({ id: uid(), method: "qr", amount: qr, at: now, kind: "bill" });
     const stillDue = due - cash - qr;
     if (stillDue > 0) payments.push({ id: uid(), method: "credit", amount: stillDue, at: now, kind: "bill" });
-    await db.bookings.update(id, { status: "done", extra: e, billNo, payments, updatedAt: now });
+    await db.bookings.update(id, { status: "done", extra: e, discount: d || undefined, outAt: now, billNo, payments, updatedAt: now });
     // With the cleaning list switched off (the admin can do that) the room is ready again at once.
     await db.rooms.update(b.room, { st: h.feat.housekeeping ? "clean" : "free" });
-    await logAudit("checkout", `${billNo} room ${b.room} total ${total} unpaid ${stillDue}`);
+    await logAudit("checkout", `${billNo} room ${b.room} total ${total} unpaid ${stillDue}${d ? ` discount ${d}` : ""}`);
     return { ok: true, value: { billNo, due: stillDue } } as const;
   });
 }
@@ -128,19 +148,19 @@ export async function loadSampleRooms() {
 const isNum = (x: unknown) => typeof x === "number" && Number.isFinite(x);
 
 /** Add one room, or bring back a deleted room with the same number. */
-export async function addRoom(r: { n: string; type: string; floor: number; beds: number; price: number }): Promise<Result> {
+export async function addRoom(r: { n: string; type: string; floor: number; beds: number; price: number; cap?: number }): Promise<Result> {
   const n = r.n.trim();
   if (!n || n.length > 12 || !isNum(r.price)) return { ok: false, error: "name" };
   return db.transaction("rw", db.rooms, async () => {
     const ex = await db.rooms.get(n);
     if (ex && !ex.deleted) return { ok: false, error: "taken" } as const;
-    await db.rooms.put({ n, type: r.type, floor: r.floor || 1, beds: r.beds || 1, price: Math.max(0, Math.round(r.price)), st: "free", deleted: false });
+    await db.rooms.put({ n, type: r.type, floor: r.floor || 1, beds: r.beds || 1, cap: r.cap && r.cap >= 1 ? Math.min(MAX_PERSONS, Math.floor(r.cap)) : undefined, price: Math.max(0, Math.round(r.price)), st: "free", deleted: false });
     return { ok: true, value: undefined } as const;
   });
 }
 
 /** Add many rooms at once, like 101 to 110. Numbers that already exist are skipped. */
-export async function addRoomRange(from: number, to: number, base: { type: string; floor: number; beds: number; price: number }): Promise<number> {
+export async function addRoomRange(from: number, to: number, base: { type: string; floor: number; beds: number; price: number; cap?: number }): Promise<number> {
   if (!Number.isInteger(from) || !Number.isInteger(to) || to < from || to - from > 199) return 0;
   let made = 0;
   for (let n = from; n <= to; n++) if ((await addRoom({ n: String(n), ...base })).ok) made++;
@@ -211,4 +231,12 @@ export async function addOrderToBooking(orderId: string, bookingId: string): Pro
     await db.orders.update(orderId, { billed: true, done: true, to: "R" + bookingId });
     return { ok: true, value: undefined } as const;
   });
+}
+
+/** Move a room to another category: its name and the number of people follow the category; the price stays. */
+export async function setRoomCat(n: string, cat: RoomCat): Promise<void> {
+  const r = await db.rooms.get(n);
+  if (!r || (r.type === cat.name && r.cap === cat.cap)) return;
+  await db.rooms.update(n, { type: cat.name, cap: cat.cap, beds: cat.cap });
+  await logAudit("room category", `room ${n}: ${r.type} -> ${cat.name} (${capOf(r, [])} -> ${cat.cap} people)`);
 }
