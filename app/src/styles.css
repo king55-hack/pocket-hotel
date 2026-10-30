@@ -89,3 +89,15 @@ td.past{background:var(--line);color:var(--mute)}
 
 /* a button that cannot be used yet must look that way */
 .btn:disabled{opacity:.45}
+
+/* a count on a bottom tab */
+nav button{position:relative}
+nav .badge{top:4px;right:calc(50% - 30px)}
+
+/* QR sheet for the rooms: shown only when printing it */
+#qr-print{display:none}
+.qr-sheet{display:grid;grid-template-columns:1fr 1fr;gap:10mm;padding:8mm}
+.qr-card{border:1px solid #000;border-radius:4mm;padding:5mm;text-align:center;break-inside:avoid;page-break-inside:avoid;color:#000;background:#fff}
+.qr-hotel{font-size:16pt;font-weight:700}.qr-room{font-size:22pt;font-weight:700;margin:2mm 0}.qr-how{font-size:12pt;margin-top:2mm}
+.qr-card svg{width:55mm;height:55mm}
+@media print{body.qr-print>*:not(#qr-print){display:none!important}body.qr-print #qr-print{display:block!important}body.qr-print{background:#fff;padding:0}}

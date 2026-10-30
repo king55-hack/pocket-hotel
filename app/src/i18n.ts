@@ -1,6 +1,6 @@
 const D = {
   en: {
-    rooms: "Rooms", staff: "Staff", book: "New booking", stay: "Bookings", food: "Restaurant", bill: "Bill", clean: "Cleaning", money: "Money", set: "Settings", admin: "Admin", report: "Reports", shifts: "Shifts",
+    rooms: "Rooms", staff: "Staff", book: "New booking", stay: "Bookings", food: "Restaurant", kitchen: "Kitchen", bill: "Bill", clean: "Cleaning", money: "Money", set: "Settings", admin: "Admin", report: "Reports", shifts: "Shifts",
     free: "Free", booked: "Booked", occupied: "Occupied", toClean: "To clean", out: "Out of order",
     tapFree: "Tap a free box to book.", today: "Today", arriving: "Arriving",
     guestName: "Guest name", phone: "Phone", room: "Room", nights: "Nights", arrival: "Arrival", from: "Booking came from", advance: "Advance (Rs)",
@@ -20,7 +20,7 @@ const D = {
     auditLog: "Activity log", cancelled: "Cancelled", noShowDone: "Marked no-show",
   },
   ne: {
-    rooms: "कोठा", staff: "स्टाफ", book: "नयाँ बुकिङ", stay: "बुकिङ सूची", food: "रेस्टुरेन्ट", bill: "बिल", clean: "सफाई", money: "पैसा", set: "सेटिङ", admin: "एडमिन", report: "रिपोर्ट", shifts: "सिफ्ट",
+    rooms: "कोठा", staff: "स्टाफ", book: "नयाँ बुकिङ", stay: "बुकिङ सूची", food: "रेस्टुरेन्ट", kitchen: "भान्छा", bill: "बिल", clean: "सफाई", money: "पैसा", set: "सेटिङ", admin: "एडमिन", report: "रिपोर्ट", shifts: "सिफ्ट",
     free: "खाली", booked: "बुक", occupied: "भरिएको", toClean: "सफा गर्ने", out: "बिग्रेको",
     tapFree: "खाली घरमा थिचेर बुकिङ गर्नुस्।", today: "आज", arriving: "आज आउने",
     guestName: "ग्राहकको नाम", phone: "फोन", room: "कोठा", nights: "कति रात", arrival: "आगमन मिति", from: "बुकिङ कहाँबाट आयो?", advance: "अग्रिम (Rs)",

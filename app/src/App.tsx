@@ -9,7 +9,9 @@ import { Reports } from "./reportsScreen";
 import { Shifts } from "./shiftsScreen";
 import { Header } from "./header";
 import { AdminPage, Login, StaffScreen } from "./screens2";
-import { countPending, getSyncState, onSync, startAutoSync, syncNow } from "./sync";
+import { countPending, getSyncState, onSync, setFastSync, startAutoSync, syncNow } from "./sync";
+import { KitchenScreen } from "./guestOrdersScreen";
+import { kitchenQueue, pendingGuest } from "./guestOrders";
 
 type BIPEvent = Event & { prompt: () => Promise<void> };
 const LOCAL = "ph.local";
@@ -62,6 +64,17 @@ function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onO
     return onSync((s) => { setSync(s); void countPending().then(setPending); });
   }, [session]);
 
+  const guestOn = !!session && !!hotel?.feat.guestOrder && !!hotel.feat.restaurant;
+  const canR = !!session && session.user.perms.includes("restaurant"), canK = !!session && session.user.perms.includes("kitchen");
+  // a hotel that takes room orders is checked more often, so a new order is not left waiting
+  useEffect(() => { setFastSync(guestOn && (canR || canK)); }, [guestOn, canR, canK]);
+  const waitingN = guestOn && orders ? (canR ? pendingGuest(orders).length : 0) : 0;
+  const cookN = guestOn && orders && canK ? kitchenQueue(orders).length : 0;
+  useEffect(() => {
+    const n = waitingN + cookN;
+    document.title = n ? `(${n}) Pocket Hotel` : "Pocket Hotel";
+  }, [waitingN, cookN]);
+
   if (!hotel || !rooms || !bookings || !orders) return <main />;
   const L = hotel.lang;
   const t = (k: Key) => tr(L, k);
@@ -73,6 +86,7 @@ function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onO
   if (can("booking.create")) tabs.push(["book", "＋"]);
   if (can("checkin") || can("booking.cancel") || can("booking.create")) tabs.push(["stay", "📋"]);
   if (hotel.feat.restaurant && can("restaurant")) tabs.push(["food", "🍽"]);
+  if (hotel.feat.restaurant && session && can("kitchen")) tabs.push(["kitchen", "🍳"]);
   if (can("checkout")) tabs.push(["bill", "🧾"]);
   if (can("money.view")) tabs.push(["money", "₨"]);
   if (can("reports.view")) tabs.push(["report", "📊"]);
@@ -95,6 +109,7 @@ function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onO
         {cur === "book" && <BookingScreen {...p} />}
         {cur === "stay" && <Bookings {...p} />}
         {cur === "food" && <Food {...p} />}
+        {cur === "kitchen" && <KitchenScreen L={L} orders={orders} bookings={bookings} canDeliver />}
         {cur === "bill" && <BillScreen {...p} />}
         {cur === "money" && <Money {...p} />}
         {cur === "clean" && <Clean {...p} />}
@@ -110,6 +125,7 @@ function Main({ session, onOut }: { session: ReturnType<typeof loadSession>; onO
           <button key={k} className={cur === k ? "on" : ""} onClick={() => go(k)}>
             <span>{i}</span>
             {t(k)}
+            {(k === "food" ? waitingN : k === "kitchen" ? cookN : 0) > 0 && <span className="badge">{k === "food" ? waitingN : cookN}</span>}
           </button>
         ))}
       </nav>

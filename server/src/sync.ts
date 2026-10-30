@@ -23,7 +23,53 @@ const dayOf = (ms: number, shift = 0) => new Date(ms + shift * 86400000).toISOSt
 function validMenu(m: unknown): boolean {
   if (m === undefined) return true;
   if (!Array.isArray(m) || m.length > 300) return false;
-  return m.every((x) => x && typeof x.id === "string" && x.id.length <= 64 && typeof x.name === "string" && x.name.length <= 80 && typeof x.price === "number" && x.price >= 0 && x.price <= 1_000_000 && typeof x.cat === "string" && x.cat.length <= 40);
+  return m.every((x) => x && typeof x.id === "string" && x.id.length <= 64 && typeof x.name === "string" && x.name.length <= 80 && typeof x.price === "number" && x.price >= 0 && x.price <= 1_000_000 && typeof x.cat === "string" && x.cat.length <= 40 && (x.photo === undefined || (typeof x.photo === "string" && x.photo.length <= 64)) && (x.off === undefined || typeof x.off === "boolean"));
+}
+
+/**
+ * A guest's food order walks forward: pending -> approved -> cooking -> ready -> delivered.
+ * The restaurant desk approves or refuses, the kitchen cooks, and the guest (through the guest door) or the desk marks it delivered.
+ * An order made by staff has no stage and counts as approved.
+ */
+const STAGES = new Set(["pending", "approved", "cooking", "ready", "delivered", "rejected"]);
+const STEPS: Record<string, { to: string[]; any: Perm[] }> = {
+  pending: { to: ["approved", "rejected"], any: ["restaurant"] },
+  approved: { to: ["cooking", "ready"], any: ["kitchen", "restaurant"] },
+  cooking: { to: ["ready"], any: ["kitchen", "restaurant"] },
+  ready: { to: ["delivered"], any: ["restaurant", "kitchen"] },
+};
+function orderNeeds(old: Row | null, nu: Row): { all: Perm[]; any?: Perm[] } | null {
+  if (typeof nu.to !== "string" || nu.to.length > 70 || !Array.isArray(nu.items) || nu.items.length > 60) return null;
+  if (!nu.items.every((l: any) => l && typeof l.name === "string" && l.name.length <= 80 && Number.isInteger(l.qty) && l.qty >= 1 && l.qty <= 99 && isMoney(l.price))) return null;
+  if (nu.stage !== undefined && !STAGES.has(nu.stage)) return null;
+  if (nu.src !== undefined && nu.src !== "guest") return null;
+  if (nu.note !== undefined && (typeof nu.note !== "string" || nu.note.length > 200)) return null;
+  if (nu.reason !== undefined && (typeof nu.reason !== "string" || nu.reason.length > 100)) return null;
+  if (!old) {
+    // guest orders come only through the guest door; a desk order starts without a stage
+    if (nu.src === "guest" || (nu.stage !== undefined && nu.stage !== "approved")) return null;
+    return { all: ["restaurant"] };
+  }
+  if (old.src !== nu.src || old.at !== nu.at) return null;
+  const guest = old.src === "guest";
+  const from = old.stage ?? "approved", into = nu.stage ?? "approved";
+  const sets: Perm[][] = []; // each change needs one of its set; with several changes the person needs one that is in all sets
+  const all: Perm[] = [];
+  if (guest && (old.to !== nu.to || old.note !== nu.note)) return null;
+  if (from !== into) {
+    const step = STEPS[from];
+    if (!step || !step.to.includes(into)) return null; // no going back, no skipping a stage
+    sets.push(step.any);
+  }
+  if (guest && nu.done !== (into === "delivered")) return null;
+  if (guest && nu.billed && into !== "delivered") return null; // not on a bill before it reached the guest
+  if (!guest && !same(old.done, nu.done)) sets.push(["restaurant", "kitchen"]);
+  if (!same(old.items, nu.items)) { if (guest && from !== "pending") return null; all.push("restaurant"); }
+  if (old.billed !== nu.billed || !same(old.paid, nu.paid) || old.to !== nu.to) sets.push(["restaurant", "checkout"]);
+  if (!sets.length && !all.length) all.push("restaurant"); // any other edit
+  const any = sets.length ? sets.reduce((x, y) => x.filter((p) => y.includes(p))) : [];
+  if (sets.length && !any.length) all.push("restaurant");
+  return { all, any: any.length ? any : undefined };
 }
 
 /** What a change needs, worked out by comparing it with what the server already has. Returns null when it is not allowed at all. */
@@ -33,7 +79,7 @@ export function needed(t: string, old: Row | null, nu: Row, restore = false): { 
   if (t === "pay") return validPay(nu) && nu.id === nu.uid ? { all: ["staff.manage"] } : null;
   if (t === "attendance")
     return typeof nu.uid === "string" && nu.uid && (nu.name === undefined || (typeof nu.name === "string" && nu.name.length <= 80)) && validDate(nu.day) && nu.id === `${nu.uid}:${nu.day}` && validPunches(nu.punches) ? { all: [] } : null;
-  if (t === "orders") return { all: ["restaurant"] };
+  if (t === "orders") return orderNeeds(old, nu);
   if (t === "rooms") {
     if (typeof nu.n !== "string" || !nu.n) return null;
     if (nu.cap !== undefined && !(Number.isInteger(nu.cap) && nu.cap >= 1 && nu.cap <= MAX_PERSONS)) return null;

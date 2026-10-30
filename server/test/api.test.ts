@@ -211,7 +211,7 @@ describe("what each role may change (sync)", () => {
     expect(price.j.rejected[0]).toMatchObject({ reason: "forbidden", server: { price: 2500 } });
     expect((await push(env, r.tok, { t: "rooms", id: "999", data: room("999") })).j.rejected[0].reason).toBe("forbidden");
     expect((await push(env, r.tok, { t: "hotel", id: "main", data: { name: "Mine" } })).j.rejected[0].reason).toBe("forbidden");
-    expect((await push(env, r.tok, { t: "orders", id: "o1", data: { to: "T1" } })).j.rejected[0].reason).toBe("forbidden");
+    expect((await push(env, r.tok, { t: "orders", id: "o1", data: { to: "T1", items: [{ name: "Tea", qty: 1, price: 40 }], done: false, billed: false, at: 1 } })).j.rejected[0].reason).toBe("forbidden");
   });
 
   it("price changes by an allowed person are written to the log", async () => {

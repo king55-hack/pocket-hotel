@@ -148,6 +148,10 @@ export const BASE_DELAY = 30_000;
 export const MAX_DELAY = 120_000;
 export const nextDelay = (prev: number, changed: boolean) => (changed ? BASE_DELAY : Math.min(MAX_DELAY, Math.round(prev * 1.5)));
 
+let fast = false;
+/** Phones at the restaurant desk and the kitchen never wait longer than the base delay, because guests are waiting for their food. */
+export const setFastSync = (on: boolean) => { fast = on; if (on) delay = Math.min(delay, BASE_DELAY); };
+
 let timer: ReturnType<typeof setTimeout> | undefined;
 let debounce: ReturnType<typeof setTimeout> | undefined;
 let delay = BASE_DELAY;
@@ -158,6 +162,7 @@ async function tick() {
   if (!document.hidden) {
     await syncNow();
     delay = nextDelay(delay, lastChanged);
+    if (fast) delay = Math.min(delay, BASE_DELAY);
   }
   timer = setTimeout(() => void tick(), delay);
 }

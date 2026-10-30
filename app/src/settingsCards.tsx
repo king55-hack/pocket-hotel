@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { api } from "./api";
+import { Photo, shrinkPhoto } from "./photo";
 import { addRoom, addRoomRange, changePrice, deleteRoom, loadSampleRooms, setRoomCat } from "./actions";
 import { db, STARTER_MENU, uid } from "./db";
 import type { Lang } from "./i18n";
@@ -60,13 +62,25 @@ export function RoomsCard({ L, rooms, cats, can, local }: { L: Lang; rooms: Room
   );
 }
 
-export function MenuCard({ L, h }: { L: Lang; h: Hotel }) {
+export function MenuCard({ L, h, code }: { L: Lang; h: Hotel; code?: string }) {
   const t = T(L);
   const menu = h.menu ?? STARTER_MENU;
   const save = (m: MenuItem[]) => void db.hotel.update("main", { menu: m });
   const [nw, setNw] = useState({ name: "", price: "", cat: "" });
   const cats = [...new Set(menu.map((m) => m.cat).filter(Boolean))];
   const edit = (id: string, patch: Partial<MenuItem>) => save(menu.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+  const [err, setErr] = useState("");
+  async function pick(m: MenuItem, file: File | undefined) {
+    setErr("");
+    if (!file) return;
+    const data = await shrinkPhoto(file);
+    if (!data) return setErr(t("फोटो पढ्न वा सानो बनाउन सकिएन। अर्को फोटो रोज्नुहोस्।", "Could not use this photo. Try another one."));
+    const r = await api("/menu/photo", "POST", { data });
+    if (r.s !== 200) return setErr(r.j?.error === "limit" ? t("फोटो धेरै भए (१००)। केही हटाउनुहोस्।", "Too many photos (100). Remove some.") : r.s === 0 ? t("इन्टरनेट चाहिन्छ।", "Needs internet.") : t("फोटो राख्न सकिएन।", "Could not save the photo."));
+    if (m.photo) void api("/menu/photo/delete", "POST", { id: m.photo });
+    edit(m.id, { photo: r.j.id });
+  }
+  const unphoto = (m: MenuItem) => { if (m.photo) void api("/menu/photo/delete", "POST", { id: m.photo }); edit(m.id, { photo: undefined }); };
   return (
     <div className="card"><h2>{t("रेस्टुरेन्ट मेनु", "Restaurant menu")}</h2>
       <datalist id="cats">{cats.map((c) => <option key={c} value={c} />)}</datalist>
@@ -76,9 +90,18 @@ export function MenuCard({ L, h }: { L: Lang; h: Hotel }) {
           <div className="row" style={{ marginTop: 6 }}>
             <input aria-label={`price ${m.name}`} type="number" inputMode="numeric" defaultValue={m.price} onBlur={(e) => edit(m.id, { price: Math.max(0, Math.round(Number(e.target.value) || 0)) })} />
             <input aria-label={`category ${m.name}`} list="cats" defaultValue={m.cat} placeholder={t("किसिम", "Category")} onBlur={(e) => edit(m.id, { cat: e.target.value.trim() })} />
-            <button className="btn sm bad" aria-label={`delete ${m.name}`} onClick={() => save(menu.filter((x) => x.id !== m.id))}>🗑</button>
+            <button className="btn sm bad" aria-label={`delete ${m.name}`} onClick={() => { if (m.photo) void api("/menu/photo/delete", "POST", { id: m.photo }); save(menu.filter((x) => x.id !== m.id)); }}>🗑</button>
           </div>
+          {h.feat.guestOrder && code && (
+            <div className="row" style={{ marginTop: 6, justifyContent: "flex-start", flexWrap: "wrap" }}>
+              {m.photo ? <Photo code={code} id={m.photo} size={56} alt={m.name} /> : <div style={{ width: 56, height: 56, borderRadius: 10, background: "var(--pri2)", display: "grid", placeItems: "center", flex: "none" }} aria-hidden="true">🍽</div>}
+              <label className="btn sm alt" style={{ margin: 0, color: "var(--pri)", fontSize: 15 }}>📷 {m.photo ? t("फोटो बदल्ने", "Change photo") : t("फोटो", "Photo")}
+                <input type="file" accept="image/*" aria-label={`photo ${m.name}`} style={{ display: "none" }} onChange={(e) => { void pick(m, e.target.files?.[0]); e.target.value = ""; }} /></label>
+              {m.photo && <button className="btn sm alt" onClick={() => unphoto(m)}>{t("फोटो हटाउने", "Remove photo")}</button>}
+              <span className="row" style={{ gap: 6, marginLeft: "auto" }}>{t("सकियो", "Sold out")}<button className={"tg" + (m.off ? " on" : "")} aria-label={`sold out ${m.name}`} onClick={() => edit(m.id, { off: !m.off })} /></span>
+            </div>)}
         </div>))}
+      {err && <div className="warn" role="alert">{err}</div>}
       {!menu.length && <p style={{ color: "var(--mute)" }}>{t("मेनु खाली छ।", "The menu is empty.")}</p>}
       <h3>＋ {t("नयाँ परिकार", "New item")}</h3>
       <input aria-label="new item name" placeholder={t("नाम", "Name")} value={nw.name} onChange={(e) => setNw({ ...nw, name: e.target.value })} />

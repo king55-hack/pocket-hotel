@@ -65,6 +65,20 @@ admin.post("/hotels/:id/features", async (c) => {
   return c.json({ ok: true, feat });
 });
 
+/**
+ * The owner lost the password and cannot use the email either. The admin, after making sure it is really the owner,
+ * makes a one-time code (good for a day). The owner types it on the "Forgot password" page and chooses a new password;
+ * the admin never sees the password.
+ */
+admin.post("/hotels/:id/recovery", async (c) => {
+  const o = await c.env.DB.prepare("SELECT email FROM users WHERE hotel_id=? AND role='owner' AND active=1").bind(c.req.param("id")).first<{ email: string }>();
+  if (!o) return c.json({ error: "not_found" }, 404);
+  const now = Date.now(), code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, "0");
+  await c.env.DB.prepare("INSERT INTO otps (email,purpose,code_hash,expires,created_at) VALUES (?,?,?,?,?)").bind(o.email, "reset", await sha256(`${code}:${o.email}:${c.env.JWT_SECRET}`), now + DAY, now).run();
+  await c.env.DB.prepare("INSERT INTO audit (hotel_id,at,user_id,action,detail) VALUES (?,?,?,?,?)").bind(c.req.param("id"), now, null, "admin recovery code", "a one-time password recovery code was made by the admin").run();
+  return c.json({ ok: true, email: o.email, code, expiresAt: now + DAY });
+});
+
 admin.get("/closures", async (c) => {
   const st = c.req.query("status") ?? "";
   const r = await c.env.DB.prepare(`SELECT * FROM closure_requests ${["pending", "approved", "rejected", "cancelled", "done"].includes(st) ? "WHERE status=?" : "WHERE ?<>'x'"} ORDER BY requested_at DESC LIMIT 100`).bind(st || "all").all();
@@ -103,7 +117,7 @@ export async function purgeHotel(env: Env, hotelId: string) {
       env.DB.prepare("DELETE FROM refresh_tokens WHERE user_id=?").bind(u.id),
       ...(u.email ? [env.DB.prepare("DELETE FROM otps WHERE email=?").bind(u.email), env.DB.prepare("DELETE FROM login_attempts WHERE key IN (?,?)").bind("owner:" + u.email, "closure:" + u.email)] : []),
     ]),
-    ...["records", "conflicts", "audit", "login_events", "mail_log", "devices", "users"].map((t) => env.DB.prepare(`DELETE FROM ${t} WHERE hotel_id=?`).bind(hotelId)),
+    ...["records", "menu_photos", "conflicts", "audit", "login_events", "mail_log", "devices", "users"].map((t) => env.DB.prepare(`DELETE FROM ${t} WHERE hotel_id=?`).bind(hotelId)),
     env.DB.prepare("DELETE FROM hotels WHERE id=?").bind(hotelId),
   ];
   await env.DB.batch(stmts);

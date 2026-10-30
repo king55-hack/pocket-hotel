@@ -30,10 +30,12 @@ export type Booking = {
 };
 
 export type OrderPay = { method: "cash" | "qr" | "card"; amount: number; at: number };
-export type Order = { updatedAt?: number; id: string; to: string; items: Line[]; done: boolean; billed: boolean; at: number; paid?: OrderPay };
+/** Where a guest order stands. An order made by staff has no stage and counts as approved. */
+export type OrderStage = "pending" | "approved" | "cooking" | "ready" | "delivered" | "rejected";
+export type Order = { updatedAt?: number; id: string; to: string; items: Line[]; done: boolean; billed: boolean; at: number; paid?: OrderPay; src?: "guest"; stage?: OrderStage; note?: string; reason?: string; deliveredAt?: number };
 
 export type BillSettings = { vatInvoice: boolean; taxIncluded: boolean; svc: boolean; vat: number; svcPct: number; idPhoto: boolean };
-export type Features = { restaurant: boolean; housekeeping: boolean; sources: boolean; excel: boolean; email: boolean; publicLink: boolean; ical: boolean; shifts: boolean; attendance: boolean; backup: boolean; smart: boolean };
+export type Features = { restaurant: boolean; housekeeping: boolean; sources: boolean; excel: boolean; email: boolean; publicLink: boolean; ical: boolean; shifts: boolean; attendance: boolean; backup: boolean; smart: boolean; guestOrder: boolean };
 
 /** A kind of room (Single, Triple, Quad ...) that the owner defines: how many people fit and the usual price. */
 export type RoomCat = { id: string; name: string; cap: number; price: number };
@@ -50,7 +52,7 @@ export type PayAdj = { month: string; bonus: number; deduct: number; note: strin
 export type PayRec = { updatedAt?: number; id: string; uid: string; name: string; mode: PayMode; rate: number; adj: PayAdj[] };
 export type Attendance = { updatedAt?: number; id: string; uid: string; name: string; day: string; punches: Punch[] };
 
-export type MenuItem = { id: string; name: string; price: number; cat: string };
+export type MenuItem = { id: string; name: string; price: number; cat: string; photo?: string; off?: boolean };
 
 export type Hotel = {
   id: "main";

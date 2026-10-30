@@ -93,7 +93,7 @@ export const DEFAULT_HOTEL: Hotel = {
   address: "",
   lang: "ne",
   bill: { vatInvoice: true, taxIncluded: true, svc: true, vat: 13, svcPct: 10, idPhoto: false },
-  feat: { restaurant: true, housekeeping: true, sources: true, excel: true, email: false, publicLink: false, ical: false, shifts: true, attendance: false, backup: false, smart: false },
+  feat: { restaurant: true, housekeeping: true, sources: true, excel: true, email: false, publicLink: false, ical: false, shifts: true, attendance: false, backup: false, smart: false, guestOrder: false },
   sources: ["Phone", "Walk-in", "WhatsApp", "Booking.com"],
   invoiceSeq: 0,
   receiptSeq: 0,

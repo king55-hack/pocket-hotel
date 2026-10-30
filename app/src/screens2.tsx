@@ -18,12 +18,12 @@ const ERR: Record<string, [string, string]> = {
 };
 export const errMsg = (L: Lang, e?: string) => (ERR[e ?? ""] ?? ["Something went wrong.", "केही गडबड भयो।"])[L === "ne" ? 1 : 0];
 
-const ROLES = ["manager", "reception", "housekeeping", "restaurant", "other"] as const;
-const ROLE_NE: Record<string, string> = { owner: "मालिक", manager: "व्यवस्थापक", reception: "रिसेप्सन", housekeeping: "सफाई", restaurant: "रेस्टुरेन्ट", other: "अन्य" };
+const ROLES = ["manager", "reception", "housekeeping", "restaurant", "kitchen", "other"] as const;
+const ROLE_NE: Record<string, string> = { owner: "मालिक", manager: "व्यवस्थापक", reception: "रिसेप्सन", housekeeping: "सफाई", restaurant: "रेस्टुरेन्ट", kitchen: "भान्छा", other: "अन्य" };
 export const PERM_LABEL: Record<string, [string, string]> = {
   "rooms.manage": ["Add/change rooms", "कोठा थप्ने/बदल्ने"], "prices.edit": ["Change prices", "मूल्य बदल्ने"], "booking.create": ["Make bookings", "बुकिङ गर्ने"],
   "booking.cancel": ["Cancel bookings", "बुकिङ रद्द गर्ने"], checkin: ["Check-in", "चेक-इन"], checkout: ["Check-out and bill", "चेक-आउट र बिल"], discount: ["Give discount", "छुट दिने"],
-  restaurant: ["Restaurant orders", "रेस्टुरेन्ट अर्डर"], housekeeping: ["Cleaning", "सफाई"], "money.view": ["See money", "पैसा हेर्ने"], "reports.view": ["Reports and log", "रिपोर्ट र लग"],
+  restaurant: ["Restaurant orders and approving room orders", "रेस्टुरेन्ट अर्डर र कोठाको अर्डर स्वीकार"], kitchen: ["Kitchen (cook room orders)", "भान्छा (अर्डर पकाउने)"], housekeeping: ["Cleaning", "सफाई"], "money.view": ["See money", "पैसा हेर्ने"], "reports.view": ["Reports and log", "रिपोर्ट र लग"],
   "staff.manage": ["Manage staff", "स्टाफ मिलाउने"], "settings.edit": ["Hotel settings", "होटल सेटिङ"], delete: ["Reopen closed bills", "बन्द बिल फेरि खोल्ने"],
 };
 
@@ -111,6 +111,20 @@ export function Login({ L, onLocal, onDone, setLang }: { L: Lang; onLocal: () =>
   );
 }
 
+/** The owner (or a manager) sets a new PIN for somebody who forgot theirs. It signs that person out of every phone. */
+function PinReset({ L, onSave }: { L: Lang; onSave: (pin: string) => Promise<boolean> }) {
+  const ne = L === "ne";
+  const [pin, setPin] = useState("");
+  const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
+  return (
+    <div className="note"><label htmlFor="np" style={{ marginTop: 0 }}>{ne ? "PIN बिर्सेको भए नयाँ PIN (६-१० अंक)" : "Forgot the PIN? New PIN (6-10 digits)"}</label>
+      <div className="row"><input id="np" inputMode="numeric" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value)} />
+        <button className="btn sm" onClick={async () => { const ok = /^\d{6,10}$/.test(pin) && (await onSave(pin)); setMsg(ok ? { ok, t: ne ? "नयाँ PIN राखियो। उनीहरू सबै फोनबाट साइन आउट भए। नयाँ PIN उनीहरूलाई भन्नुहोस्।" : "New PIN saved. They were signed out everywhere. Tell them the new PIN." } : { ok, t: ne ? "PIN ६-१० अंकको र सजिलो नभएको हुनुपर्छ (जस्तै १२३४५६ हुँदैन)।" : "The PIN must be 6-10 digits and not an easy one (like 123456)." }); if (ok) setPin(""); }}>{ne ? "राख्नुहोस्" : "Set"}</button></div>
+      {msg && <div className={msg.ok ? "" : "warn"} role="status">{msg.t}</div>}
+    </div>
+  );
+}
+
 /* ---------- staff, devices, account (owner side) ---------- */
 type StaffRow = { id: string; name: string; username: string | null; role: string; perms: string[]; active: boolean; email: string | null };
 
@@ -152,8 +166,8 @@ export function StaffScreen({ L, session }: { L: Lang; session: Session }) {
                     <button className={"tg" + (u.perms.includes(p) ? " on" : "")} aria-label={p} disabled={!myPerms.has(p)} onClick={() => void patch(u.id, { perms: u.perms.includes(p) ? u.perms.filter((x) => x !== p) : [...u.perms, p] })} /></div>))}
                 <div className="grid2">
                   <button className="btn alt" onClick={() => void patch(u.id, { active: !u.active })}>{u.active ? (ne ? "बन्द गर्ने" : "Switch off") : (ne ? "खोल्ने" : "Switch on")}</button>
-                  <button className="btn alt" onClick={() => { const p = window.prompt(ne ? "नयाँ PIN (६-१० अंक)" : "New PIN (6-10 digits)"); if (p) void patch(u.id, { pin: p }); }}>PIN</button>
-                </div>
+                  </div>
+                <PinReset L={L} onSave={async (pin) => { const r = await api("/staff/" + u.id, "POST", { pin }); return r.s === 200; }} />
               </div>)}
           </div>))}
         <h3>＋ {ne ? "नयाँ स्टाफ" : "Add staff"}</h3>
@@ -218,7 +232,7 @@ export function AccountCard({ L, session, onOut }: { L: Lang; session: Session; 
 }
 
 /* ---------- the seller's admin page (#/admin) ---------- */
-const FEATS: [string, string, string][] = [["restaurant", "Restaurant", "रेस्टुरेन्ट"], ["housekeeping", "Housekeeping", "सफाई"], ["sources", "Own booking sources", "आफ्ना बुकिङ स्रोत"], ["excel", "Excel export", "एक्सेल"], ["email", "Email bills", "इमेल बिल"], ["publicLink", "Book-here link (later)", "बुक लिङ्क (पछि)"], ["ical", "Calendar sync (later)", "क्यालेन्डर (पछि)"], ["shifts", "Staff shifts", "स्टाफ सिफ्ट"], ["attendance", "Clock in/out + salary (premium)", "हाजिरी र तलब (प्रिमियम)"], ["backup", "Backup / restore (premium)", "ब्याकअप (प्रिमियम)"], ["smart", "Smart staff suggestion (premium)", "स्मार्ट सुझाव (प्रिमियम)"]];
+const FEATS: [string, string, string][] = [["restaurant", "Restaurant", "रेस्टुरेन्ट"], ["housekeeping", "Housekeeping", "सफाई"], ["sources", "Own booking sources", "आफ्ना बुकिङ स्रोत"], ["excel", "Excel export", "एक्सेल"], ["email", "Email bills", "इमेल बिल"], ["publicLink", "Book-here link (later)", "बुक लिङ्क (पछि)"], ["ical", "Calendar sync (later)", "क्यालेन्डर (पछि)"], ["shifts", "Staff shifts", "स्टाफ सिफ्ट"], ["attendance", "Clock in/out + salary (premium)", "हाजिरी र तलब (प्रिमियम)"], ["backup", "Backup / restore (premium)", "ब्याकअप (प्रिमियम)"], ["smart", "Smart staff suggestion (premium)", "स्मार्ट सुझाव (प्रिमियम)"], ["guestOrder", "Guests order food by room QR (premium)", "कोठाको QR बाट खाना अर्डर (प्रिमियम)"]];
 
 export function AdminPage({ L, setLang }: { L: Lang; setLang: () => void }) {
   const ne = L === "ne";
@@ -230,6 +244,7 @@ export function AdminPage({ L, setLang }: { L: Lang; setLang: () => void }) {
   const [reqs, setReqs] = useState<any[]>([]);
   const [q, setQ] = useState("");
   const [logins, setLogins] = useState<{ id: string; rows: LoginRow[] } | null>(null);
+  const [recovery, setRecovery] = useState<{ id: string; code: string; email: string } | null>(null);
   async function load(k = key) {
     const s = await adminApi(k, "/stats");
     if (s.s !== 200) { setOk(false); return setMsg(s.s === 429 ? errMsg(L, "locked") : s.s === 0 ? errMsg(L, "offline") : ne ? "कुञ्जी मिलेन।" : "Wrong key."); }
@@ -254,6 +269,8 @@ export function AdminPage({ L, setLang }: { L: Lang; setLang: () => void }) {
           {hotels.map((h) => (
             <div key={h.id} style={{ borderTop: "1px solid var(--line)", marginTop: 8 }}>
               <p><b>{h.name}</b> <small>{h.email} · {h.code} · staff {h.staff} · devices {h.devices} · records {h.records}</small></p>
+              <button className="btn sm alt" onClick={async () => { if (!window.confirm(ne ? "पक्का मालिक नै हो भनेर पहिले चिन्नुहोस्। कोड बनाउने?" : "Make sure it really is the owner first. Make the code?")) return; const r = await adminApi(key, `/hotels/${h.id}/recovery`, {}); setRecovery(r.s === 200 ? { id: h.id, ...r.j } : null); }}>{ne ? "मालिकको पासवर्ड कोड" : "Owner password code"}</button>
+              {recovery && recovery.id === h.id && <div className="note">{ne ? "यो कोड मालिकलाई फोन/सन्देशमा भन्नुहोस्। उनले ‘पासवर्ड बिर्सनुभयो?’ मा कोड लेखेर आफैं नयाँ पासवर्ड राख्छन्। २४ घण्टा चल्छ, एक पटक मात्र।" : "Give this code to the owner. They type it under ‘Forgot password?’ and choose their own new password. Works 24 hours, once."}<br /><b style={{ fontSize: 26, letterSpacing: 4 }}>{recovery.code}</b><br /><small>{recovery.email}</small></div>}
               <button className="btn sm alt" onClick={async () => { const r = await adminApi(key, `/hotels/${h.id}/logins`); setLogins({ id: h.id, rows: r.j.logins ?? [] }); }}>{ne ? "लगइन इतिहास" : "Login history"}</button>
               {logins && logins.id === h.id && <LoginList L={L} rows={logins.rows} />}
               {FEATS.map(([k, en, np]) => <div className="sw" key={k}><div>{ne ? np : en}</div><button className={"tg" + (h.feat[k] ? " on" : "")} aria-label={h.name + " " + k} onClick={() => void toggle(h, k)} /></div>)}
@@ -362,7 +379,10 @@ function ForgotCard({ L, email0, onBack }: { L: Lang; email0: string; onBack: ()
     <div className="card"><h2>{ne ? "पासवर्ड बिर्सनुभयो?" : "Forgot password?"}</h2>
       <label htmlFor="fe">Email</label><input id="fe" type="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} />
       {!sent ? (
-        <button className="btn" disabled={busy} onClick={() => void send()}>{ne ? "कोड पठाउनुहोस्" : "Send code"}</button>
+        <>
+          <button className="btn" disabled={busy} onClick={() => void send()}>{ne ? "कोड पठाउनुहोस्" : "Send code"}</button>
+          <button className="btn alt" onClick={() => { setSent(true); setMsg(ne ? "एडमिनले दिएको ६ अंकको कोड तल लेख्नुहोस्।" : "Type the 6-digit code the admin gave you."); }}>{ne ? "इमेल चल्दैन — एडमिनले कोड दिएको छ" : "No access to my email — the admin gave me a code"}</button>
+        </>
       ) : (
         <>
           <label htmlFor="fc">{ne ? "इमेलको ६ अंकको कोड" : "6-digit code from email"}</label><input id="fc" inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value)} />

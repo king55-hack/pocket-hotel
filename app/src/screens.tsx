@@ -14,8 +14,11 @@ import { tr, type Key, type Lang } from "./i18n";
 import { api, type Session } from "./api";
 import { AccountCard, LocalCard } from "./screens2";
 import { csvFile } from "./csv";
+import { GuestOrderCard } from "./guestOrderCard";
+import { GuestApprovals, stageWord } from "./guestOrdersScreen";
+import { setStage } from "./guestOrders";
 
-export type Tab = "rooms" | "book" | "stay" | "food" | "bill" | "money" | "clean" | "set" | "staff" | "report" | "shifts";
+export type Tab = "rooms" | "book" | "stay" | "food" | "kitchen" | "bill" | "money" | "clean" | "set" | "staff" | "report" | "shifts";
 export type P = {
   h: Hotel; L: Lang; rooms: Room[]; bookings: Booking[]; orders: Order[];
   go: (t: Tab, id?: string) => void; sel: string; can: (p: string) => boolean; session: Session | null; onOut: () => void;
@@ -162,6 +165,7 @@ export function Food({ h, L, bookings, orders }: P) {
   const add = (name: string, price: number) => setCart((c) => (c.find((l) => l.name === name) ? c.map((l) => (l.name === name ? { ...l, qty: l.qty + 1 } : l)) : [...c, { name, qty: 1, price }]));
   return (
     <>
+      {h.feat.guestOrder && <GuestApprovals L={L} orders={orders} bookings={bookings} />}
       <div className="card"><h2>{t("food")}</h2>
         {cats.map((cat) => (
           <div key={cat}>{cats.length > 1 && <h3>{cat}</h3>}
@@ -175,13 +179,13 @@ export function Food({ h, L, bookings, orders }: P) {
         <select id="fto" value={to} onChange={(e) => setTo(e.target.value)}><option value="T1">{t("table")} 1</option><option value="T2">{t("table")} 2</option>{occupied.map((b) => <option key={b.id} value={"R" + b.id}>{t("room")} {b.room} · {b.guest}</option>)}</select>
         <button className="btn" disabled={!cart.length} onClick={async () => { await db.orders.add({ id: uid(), to, items: cart, done: false, billed: false, at: Date.now() }); setCart([]); }}>{t("send")}</button></div>
       <div className="card"><h3>{L === "ne" ? "भान्छा स्क्रिन" : "Kitchen screen"}</h3>
-        {orders.filter((o) => !o.billed).map((o) => {
+        {orders.filter((o) => !o.billed && o.stage !== "pending" && o.stage !== "rejected").map((o) => {
           const bid = o.to.startsWith("R") ? o.to.slice(1) : "";
           const bk = bookings.find((b) => b.id === bid);
           return (
             <div className="item" key={o.id}>
               <div><b>{bk ? `${t("room")} ${bk.room}` : o.to.replace("T", t("table") + " ")}</b><br /><small>{o.items.map((x) => `${x.qty}× ${x.name}`).join(", ")}</small></div>
-              {!o.done ? <button className="btn sm" onClick={() => void db.orders.update(o.id, { done: true })}>{t("served")}</button>
+              {!o.done ? (o.stage ? (o.stage === "ready" ? <button className="btn sm" onClick={() => void setStage(o.id, "delivered")}>{L === "ne" ? "पुर्‍याइयो" : "Delivered"}</button> : <span className="pill s-booked">{stageWord(o.stage, L)}</span>) : <button className="btn sm" onClick={() => void db.orders.update(o.id, { done: true })}>{t("served")}</button>)
                 : bid ? <button className="btn sm" onClick={async () => { const r = await addToRoomBill(bid, o.items); if (r.ok) await db.orders.update(o.id, { billed: true }); }}>{t("toRoom")}</button>
                 : (
                   <span>
@@ -214,7 +218,7 @@ export function BillScreen({ h, L, rooms, bookings, orders, sel, session, can }:
   const [done, setDone] = useState<{ billNo: string; due: number; id: string } | null>(null);
   const b = occ.find((x) => x.id === pick) ?? occ[0];
   const recent = bookings.filter((x) => x.status === "done" && x.billNo).sort((p, q) => q.updatedAt - p.updatedAt).slice(0, 8);
-  const waiting = (id: string) => orders.filter((o) => !o.billed && (o.to === "R" + id || o.to.startsWith("T")));
+  const waiting = (id: string) => orders.filter((o) => !o.billed && (!o.stage || o.stage === "delivered") && (o.to === "R" + id || o.to.startsWith("T")));
   const finished = done ? bookings.find((x) => x.id === done.id) : undefined;
   if (done)
     return (
@@ -398,7 +402,8 @@ export function SettingsScreen({ h, L, rooms, can, session, onOut }: P) {
       {can("rooms.manage") && <CategoriesCard L={L} h={h} />}
       {can("settings.edit") && <RulesCard L={L} h={h} />}
       {can("settings.edit") && h.feat.shifts && !!session && <ShiftSetupCard L={L} h={h} />}
-      {can("settings.edit") && h.feat.restaurant && <MenuCard L={L} h={h} />}
+      {can("settings.edit") && h.feat.restaurant && h.feat.guestOrder && !!session && <GuestOrderCard L={L} h={h} />}
+      {can("settings.edit") && h.feat.restaurant && <MenuCard L={L} h={h} code={session?.hotel.code} />}
       {h.feat.backup && !!session && can("delete") && <BackupCard L={L} withPay={can("staff.manage")} />}
       <PrinterCard L={L} />
       {h.feat.sources && can("settings.edit") ? (
