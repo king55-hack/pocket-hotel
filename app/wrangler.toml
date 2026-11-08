@@ -1,6 +1,9 @@
 name = "pocket-hotel"
 compatibility_date = "2025-09-01"
 
+# Own address for the web app (Cloudflare creates the DNS record and certificate). The workers.dev address keeps working.
+routes = [{ pattern = "hotel.rajanrimal.com.np", custom_domain = true }]
+
 # The built web app. public/_headers (copied into dist) sets the content security policy.
 [assets]
 directory = "./dist"
